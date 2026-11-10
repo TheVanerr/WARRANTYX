@@ -1,0 +1,209 @@
+/* Belge: A4 dikey sayfalar (210 × 297 mm). Ekran önizlemesi ve PDF aynı kuralları kullanır.
+   Antet ve altbilgi P&ID antetiyle aynı ölçülerdedir. PDF çizici kutu, kenarlık, düz renk, görsel ve yazı çizer;
+   gölge, degrade, ::before ve çerçeveli yuvarlak çizilmez, bu yüzden belgede kullanılmaz. */
+
+.wx-page {
+  --acc: #ff0000;
+  --acc-deep: #d40000;
+  --acc-soft: #fff1f1;
+  --ink: #15171c;
+  --ink-2: #3c4250;
+  --gray: #6b7280;
+  --line: #d7dbe2;
+  --line-soft: #e9ecf1;
+  position: relative;
+  display: block;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: #fff;
+  color: var(--ink);
+  font-family: Calibri, Carlito, 'Segoe UI', sans-serif;
+  font-size: 10.5pt;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  box-sizing: border-box;
+  white-space: normal;
+}
+.wx-page *, .wx-page *::before, .wx-page *::after { box-sizing: border-box; }
+/* Sıfırlama önceliksizdir (:where): bileşenlerin kendi iç boşluğunu ezmez */
+:where(.wx-page) :where(h1, h2, h3, p, ul, li) { margin: 0; padding: 0; }
+:where(.wx-page) :where(ul) { list-style: none; }
+:where(.wx-page) :where(img) { display: block; }
+.wx-page .wx-blank { display: inline-block; min-width: 3cm; }
+.wx-page strong { font-weight: 700; }
+
+/* ─── Kapak: Kırmızı Bant (P&ID kapak stüdyosunun dili, A4 dikey 793.7 × 1122.5 px) ─── */
+
+.wx-cover { font-family: 'Segoe UI', Calibri, sans-serif; line-height: 1.3; }
+
+.wx-cv-bant .wx-b-band { position: absolute; left: 0; top: 0; bottom: 0; width: 150px; overflow: hidden; background: var(--acc); color: #fff; }
+.wx-cv-bant .wx-b-spine { position: absolute; left: 0; right: 0; top: 60px; padding: 0 12px; text-align: center; }
+.wx-cv-bant .wx-b-spine span { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+.wx-cv-bant .wx-b-spine b { display: block; margin-top: 5px; font-size: 17px; font-weight: 700; letter-spacing: 0.03em; overflow-wrap: anywhere; }
+.wx-cv-bant .wx-b-mark {
+  position: absolute; left: 0; right: 0; bottom: 56px;
+  display: flex; justify-content: center; writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 116px; font-weight: 800; line-height: 150px; letter-spacing: 0.01em; white-space: nowrap;
+}
+.wx-cv-bant .wx-b-main { position: absolute; left: 212px; right: 60px; top: 60px; bottom: 46px; display: flex; flex-direction: column; }
+.wx-cv-bant .wx-b-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.wx-cv-bant .wx-b-head { margin-top: auto; }
+
+.wx-cover .wx-cv-logo { display: block; width: 250px; height: 89px; object-fit: contain; object-position: left center; flex-shrink: 0; }
+.wx-cover .wx-cv-no { text-align: right; white-space: nowrap; }
+.wx-cover .wx-cv-no span { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); }
+.wx-cover .wx-cv-no b { display: block; margin-top: 3px; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink); }
+.wx-cover .wx-cv-kicker { font-size: 14px; font-weight: 700; letter-spacing: 0.16em; color: var(--acc); }
+.wx-cover .wx-cv-title { margin-top: 14px; font-weight: 800; line-height: 1.02; letter-spacing: -0.01em; color: var(--ink); overflow-wrap: anywhere; }
+.wx-cover .wx-cv-rule { margin-top: 26px; width: 96px; height: 7px; background: var(--acc); }
+.wx-cover .wx-cv-customer { margin-top: 20px; font-size: 21px; line-height: 1.25; color: var(--ink-2); overflow-wrap: anywhere; }
+
+/* Bilgi satırları (P&ID kapağındaki liste) */
+.wx-cover .wx-cv-list { margin-top: 46px; border-top: 1px solid var(--line); }
+.wx-cover .wx-cv-row {
+  display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 12px; align-items: baseline;
+  padding: 9px 2px; border-bottom: 1px solid var(--line);
+}
+.wx-cover .wx-cv-dt { font-size: 12.5px; color: var(--gray); }
+.wx-cover .wx-cv-dd { font-size: 16px; font-weight: 600; line-height: 1.25; color: var(--ink); overflow-wrap: anywhere; }
+.wx-cover .wx-cv-dd.strong { font-weight: 800; color: var(--acc); }
+.wx-cover .wx-cv-dd.wx-blank { min-width: 0; height: 20px; }
+
+/* Garanti göstergeleri: büyük kırmızı sayı, altında etiket */
+.wx-cover .wx-cv-stats { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 3px solid var(--ink); }
+.wx-cover .wx-cv-stat { min-width: 0; padding: 14px 0 0 18px; border-left: 1px solid var(--line); }
+.wx-cover .wx-cv-stat:first-child { padding-left: 0; border-left: 0; }
+.wx-cover .wx-cv-stat b { display: block; font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--acc); }
+.wx-cover .wx-cv-stat span { display: block; margin-top: 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; line-height: 1.4; color: var(--ink); }
+
+/* Alt bilgi: firma adı ve uyarı aynı satırda (son satırın taban çizgisinde) */
+.wx-cover .wx-cv-foot {
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: last baseline; gap: 24px;
+}
+.wx-cover .wx-cv-firm { font-family: Calibri, Carlito, sans-serif; font-size: 13.5px; font-weight: 700; color: var(--acc); white-space: nowrap; }
+.wx-cover .wx-cv-note { max-width: 280px; text-align: right; font-size: 10.5px; line-height: 1.4; color: var(--gray); }
+
+/* ─── Antetli iç sayfa (P&ID antet ölçüleri) ─── */
+
+.wx-inner .wx-ph {
+  position: absolute; top: 24px; left: 70px; right: 70px; height: 40px; padding-bottom: 5px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  border-bottom: 2px solid var(--acc);
+  font-family: 'Segoe UI', sans-serif;
+}
+.wx-inner .wx-ph-brand { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.wx-inner .wx-ph-name { font-size: 17px; font-weight: 800; letter-spacing: 0.5px; color: var(--acc); }
+.wx-inner .wx-ph-sub { font-size: 9.5px; letter-spacing: 1.1px; text-transform: uppercase; color: #777; }
+.wx-inner .wx-ph-right { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; color: var(--acc); text-align: right; overflow: hidden; white-space: nowrap; text-overflow: clip; }
+.wx-inner .wx-body { position: absolute; left: 70px; right: 70px; top: 88px; bottom: 124px; overflow: hidden; }
+.wx-inner .wx-pf-line { position: absolute; left: 70px; right: 70px; bottom: 99px; height: 0; border-top: 2px solid var(--acc); }
+.wx-inner .wx-pf {
+  position: absolute; left: 70px; right: 70px; bottom: 66px; height: 18px;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font-size: 9.5pt; color: var(--acc); white-space: nowrap;
+}
+.wx-inner .wx-pf-mid { color: var(--gray); font-size: 9pt; overflow: hidden; }
+.wx-inner .wx-pf-num { font-size: 10.5pt; }
+
+/* ─── Ortak yazı öğeleri ─── */
+
+.wx-h1 {
+  padding: 1px 0 1px 11px; border-left: 4px solid var(--acc);
+  font-size: 14pt; font-weight: 700; line-height: 1.25; letter-spacing: 0.02em; color: var(--ink);
+}
+.wx-p { font-size: 10.2pt; line-height: 1.5; color: var(--ink); }
+.wx-lead {
+  padding: 9px 14px; border-left: 3px solid var(--acc); background: var(--acc-soft);
+  font-size: 10.2pt; line-height: 1.45; color: var(--ink);
+}
+/* Ara başlık: garanti belgesi sayfasındaki bölüm başlıklarıyla aynı */
+.wx-h2, .wx-sec-title {
+  padding-bottom: 4px; border-bottom: 1.5px solid var(--ink);
+  font-family: 'Segoe UI', sans-serif; font-size: 8.6pt; font-weight: 700; line-height: 1.3;
+  letter-spacing: 0.13em; text-transform: uppercase; color: var(--acc);
+}
+
+/* ─── Garanti şartları: numaralı maddeler ───
+   Numara solda sabit sütunda, metin tek hizada, sola yaslı (iki yana yaslamanın düzensiz boşlukları olmaz). */
+
+.wx-terms .wx-body > * + * { margin-top: 8px; }
+.wx-terms .wx-h1 + .wx-lead { margin-top: 14px; }
+.wx-terms .wx-lead + * { margin-top: 14px; }
+.wx-terms .wx-body > .wx-h2 { margin-top: 20px; }
+.wx-terms .wx-body > .wx-h2:first-child { margin-top: 0; }
+.wx-terms .wx-h2 + * { margin-top: 10px; }
+.wx-cl { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: baseline; font-size: 10.2pt; line-height: 1.5; color: var(--ink); }
+.wx-cl-no { font-family: 'Segoe UI', sans-serif; font-size: 8.6pt; font-weight: 700; color: var(--acc); }
+.wx-cl-sub { padding-left: 26px; grid-template-columns: 22px minmax(0, 1fr); }
+.wx-cl-sub .wx-cl-no { color: var(--ink-2); }
+.wx-terms .wx-body > .wx-cl-sub { margin-top: 4px; }
+
+/* Sıkı dizgi: son sayfaya yalnız birkaç satır taşınca kullanılır (belge.js sartlar) */
+.wx-tight .wx-cl, .wx-tight .wx-lead { font-size: 9.9pt; line-height: 1.42; }
+.wx-terms.wx-tight .wx-body > * + * { margin-top: 6px; }
+.wx-terms.wx-tight .wx-body > .wx-h2 { margin-top: 15px; }
+.wx-terms.wx-tight .wx-body > .wx-cl-sub { margin-top: 3px; }
+
+/* ─── Garanti belgesi sayfası ─── */
+
+.wx-cert { height: 100%; display: flex; flex-direction: column; gap: 11px; }
+.wx-cert-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 9px; border-bottom: 3px solid var(--acc); }
+.wx-cert-kicker { font-family: 'Segoe UI', sans-serif; font-size: 7.6pt; font-weight: 600; letter-spacing: 0.15em; color: var(--gray); }
+.wx-cert-title { margin-top: 2px; font-size: 25pt; font-weight: 700; line-height: 1.05; letter-spacing: 0.5px; color: var(--acc); }
+.wx-cert-no { text-align: right; white-space: nowrap; }
+.wx-cert-no span { display: block; font-size: 8pt; letter-spacing: 0.05em; color: var(--gray); }
+.wx-cert-no b { display: block; font-size: 14pt; font-weight: 700; color: var(--ink); }
+.wx-cert-approval { display: flex; align-items: baseline; gap: 8px; font-size: 10pt; }
+.wx-cert-approval span:first-child { color: var(--gray); }
+.wx-cert-approval-v { font-weight: 700; }
+.wx-cert-legal { font-size: 8.8pt; line-height: 1.45; color: var(--ink-2); }
+/* Uyarı bandı ve kaşe / imza kutuları sayfanın altına oturur, aradaki boşluk kaşeye kalır */
+.wx-cert-alert {
+  margin-top: auto;
+  display: flex; align-items: center; gap: 12px; padding: 7px 12px; border-radius: 3px;
+  background: var(--acc); color: #fff; font-size: 9.6pt; font-weight: 700; letter-spacing: 0.03em;
+}
+.wx-cert-alert b { font-size: 11pt; letter-spacing: 0.08em; white-space: nowrap; }
+.wx-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+.wx-kv {
+  display: grid; grid-template-columns: 36% minmax(0, 1fr); gap: 8px; align-items: baseline;
+  padding: 5px 0; border-bottom: 1px solid var(--line-soft); min-height: 26px;
+}
+.wx-kv.full { grid-column: 1 / -1; grid-template-columns: calc(18% - 4px) minmax(0, 1fr); }
+.wx-k { font-size: 8.8pt; color: var(--gray); }
+.wx-v { font-size: 10pt; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.wx-v.strong { color: var(--acc); }
+.wx-v.wx-blank { min-width: 0; height: 14px; }
+.wx-cert-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.wx-cert-two .wx-kv { grid-template-columns: 38% minmax(0, 1fr); }
+/* İmalatçı ve satıcı: iki sütun, üstteki iki firma bölümüyle aynı hizada */
+.wx-cert-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 3px; }
+.wx-sign {
+  height: 168px; padding: 8px 10px 7px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  border: 1px solid var(--line); border-top: 3px solid var(--ink);
+}
+.wx-sign > span { font-family: 'Segoe UI', sans-serif; font-size: 7.6pt; font-weight: 700; letter-spacing: 0.1em; color: var(--ink); }
+.wx-sign-foot { display: flex; justify-content: space-between; gap: 6px; }
+.wx-sign-foot em { font-style: normal; font-size: 8pt; color: #9aa1ad; }
+
+/* ─── Servis kayıt sayfası ─── */
+
+.wx-svc { display: flex; flex-direction: column; gap: 12px; }
+.wx-svc-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 9px 12px; background: #f5f6f8; }
+.wx-svc-meta span:first-child { display: block; font-size: 8.4pt; color: var(--gray); }
+.wx-svc-v { display: block; font-size: 10.5pt; font-weight: 700; min-height: 15px; }
+.wx-tbl { border: 1px solid var(--line); border-top: 0; border-bottom: 0; }
+.wx-tr { display: grid; grid-template-columns: 14% 15% minmax(0, 1fr) 14% 18%; height: 44px; border-bottom: 1px solid var(--line); }
+.wx-tr > span { padding: 5px 7px; border-left: 1px solid var(--line); font-size: 8.4pt; }
+.wx-tr > span:first-child { border-left: 0; }
+/* Başlık satırı belgenin kırmızısıyla: açık kırmızı zemin, kırmızı ortalı yazı */
+.wx-th { height: 38px; background: var(--acc-soft); border-top: 2px solid var(--acc); border-bottom: 2px solid var(--acc); }
+.wx-th > span {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  border-left-color: #f4c7c7; color: var(--acc);
+  font-family: 'Segoe UI', sans-serif; font-weight: 700; font-size: 8pt; line-height: 1.25; letter-spacing: 0.03em;
+}

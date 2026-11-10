@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WarrantyX · Dolfin Garanti Belgesi</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="codes/tema.css">
+  <link rel="stylesheet" href="codes/belge.css">
+</head>
+<body>
+
+  <!-- ── İlk kurulum: veritabanı bağlantısı ── -->
+  <section id="setup" class="setup hidden">
+    <div class="setup-inner">
+      <div class="setup-brand">
+        <img src="assets/logos/dolfin.png" alt="Dolfin">
+        <div>
+          <h1>WarrantyX</h1>
+          <p>Dolfin garanti belgesi · TR · EN · DE · PDF</p>
+        </div>
+      </div>
+      <div class="panel" id="setupConnect"></div>
+    </div>
+  </section>
+
+  <!-- ── Ana ekran ── -->
+  <section id="home" class="home hidden">
+    <div class="home-bar">
+      <img src="assets/logos/dolfin.png" alt="Dolfin" class="home-logo">
+      <div class="home-title">
+        <h1>Garanti Belgesi</h1>
+        <p>WarrantyX · Endüstriyel parça yıkama makineleri · TR · EN · DE</p>
+      </div>
+      <div class="home-actions">
+        <button type="button" class="btn btn-primary" id="btnNew">+ Yeni Garanti Belgesi</button>
+      </div>
+    </div>
+    <nav class="home-nav">
+      <button type="button" class="home-tab active" data-tab="belgeler">Belgeler <span id="docCount" class="home-count"></span></button>
+      <button type="button" class="home-tab" data-tab="ayarlar">Ayarlar</button>
+      <button type="button" class="home-tab" data-tab="veritabani">Veritabanı</button>
+    </nav>
+
+    <div id="pageBelgeler" class="home-page">
+      <div class="home-tools" id="docTools">
+        <input type="search" id="docSearch" class="search" placeholder="Seri no, model, müşteri veya belge no ara…" autocomplete="off">
+        <span id="docResult"></span>
+      </div>
+      <div id="docList" class="doc-list"></div>
+      <div id="docEmpty" class="hidden"></div>
+    </div>
+
+    <div id="pageAyarlar" class="home-page hidden">
+      <form id="settingsForm" class="page-inner" autocomplete="off"></form>
+    </div>
+
+    <div id="pageVeritabani" class="home-page hidden">
+      <div class="page-inner">
+        <div class="card">
+          <div class="card-head"><h2>Veritabanı</h2><span id="dbMode"></span></div>
+          <div class="db-info" id="dbInfo">Bağlanıyor…</div>
+          <div class="actions">
+            <button type="button" class="btn" id="dbSync">Şimdi eşitle</button>
+            <button type="button" class="btn" id="dbBackup">Yedek indir</button>
+            <button type="button" class="btn" id="dbRestore">Yedekten yükle</button>
+            <button type="button" class="btn" id="dbShowConnect">GitHub deposuna bağla</button>
+            <button type="button" class="btn btn-danger" id="dbDisconnect" hidden>Bağlantıyı kaldır</button>
+            <input type="file" id="dbRestoreFile" accept=".json,application/json" hidden>
+          </div>
+          <div class="result" id="dbResult" role="status"></div>
+        </div>
+        <div class="card hidden" id="dbConnect"></div>
+        <div class="card">
+          <div class="card-head"><h2>Depodaki düzen</h2><span>Her kayıt GitHub geçmişinde durur</span></div>
+          <pre class="repo-tree">warrantyx-veri/
+├── README.md                ilk bağlantıda program yazar
+├── ayarlar.json             firma bilgileri, garanti varsayılanları, kapak
+└── belgeler/
+    ├── 0626051.json         her garanti belgesi bir dosya (dosya adı = Seri No)
+    └── …</pre>
+          <p class="field-help">Kayıt önce bu bilgisayarın tarayıcı veritabanına yazılır, internet kesilse de kaybolmaz. Değişenler en geç 1 dakikada bir, sayfadan çıkarken ve sayfa açılırken tek commit olarak depoya gönderilir. İki bilgisayarda aynı belge değişirse yeni olan asıl dosya olur, eskisi yanında <code>.catisma-&lt;tarih&gt;</code> adıyla saklanır.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Belge düzenleyici ── -->
+  <section id="editor" class="editor hidden">
+    <header class="topbar">
+      <button type="button" class="tb-logo" id="btnHome" title="Belgelere dön">
+        <img src="assets/logos/dolfin.png" alt="Dolfin">
+      </button>
+      <div class="tb-doc">
+        <strong id="edTitle"></strong>
+        <span id="edState" class="save-state"></span>
+      </div>
+      <div class="tb-spacer"></div>
+      <div class="tb-group">
+        <span class="lang-label">Belge dili</span>
+        <div class="lang-seg" id="edLang" role="group" aria-label="Belge dili"></div>
+      </div>
+      <div class="tb-group">
+        <button type="button" class="icon-btn" id="zoomOut" title="Uzaklaş">−</button>
+        <button type="button" class="zoom-value" id="zoomValue" title="Genişliğe sığdır">100%</button>
+        <button type="button" class="icon-btn" id="zoomIn" title="Yakınlaş">+</button>
+      </div>
+      <div class="tb-group">
+        <button type="button" class="btn btn-sm" id="edSave" title="Depoya şimdi gönder (Ctrl+S)">Kaydet</button>
+        <button type="button" class="btn btn-sm btn-primary" id="edPdf" title="PDF İndir (Ctrl+P)">PDF İndir</button>
+      </div>
+    </header>
+    <aside class="side side-left"><form class="side-body" id="edForm" autocomplete="off"></form></aside>
+    <main class="preview" id="preview"><div class="pages" id="pages"></div></main>
+    <aside class="side side-right"><div class="side-body" id="edRight"></div></aside>
+  </section>
+
+  <button type="button" id="wxChip" class="wx-chip" hidden title="Veritabanı"></button>
+  <div id="measureRoot"></div>
+  <div id="printRoot"></div>
+  <div id="modalRoot"></div>
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="ortak/ppx-db.js"></script>
+  <script src="ortak/ppx-github.js"></script>
+  <script src="ortak/wx-boot.js"></script>
+  <script src="assets/gomulu-gorsel.js"></script>
+  <script src="codes/kayit.js"></script>
+  <script src="codes/metin.js"></script>
+  <script src="codes/belge.js"></script>
+  <script src="codes/pdf.js"></script>
+  <script src="codes/pdf-dom.js"></script>
+  <script src="codes/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "warrantyx",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WarrantyX: Dolfin garanti belgesi programı (TR, EN, DE, vektörel PDF). Veritabanı özel GitHub deposu warrantyx-veri. Başlatmak için index.html dosyasını açın.",
+  "scripts": {
+    "test": "node --test test/wx.test.js",
+    "gomulu": "node tools/gomulu-uret.js"
+  }
+}

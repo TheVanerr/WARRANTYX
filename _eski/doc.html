@@ -1,0 +1,527 @@
+/* Genel Sayfa Ayarları */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 1-) Üst Navbar Ayarları */
+.navbar {
+    background-color: #1e293b;
+    color: #ffffff;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+/* Ortak Buton Tasarımları */
+.btn {
+    background-color: #334155;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #475569;
+}
+
+/* Sol Bölüm: 2-) Kullanıcı Girişi Butonu */
+.nav-left {
+    display: flex;
+    align-items: center;
+}
+
+.btn-login {
+    background-color: #8b5cf6;
+}
+.btn-login:hover {
+    background-color: #7c3aed;
+}
+
+/* Orta Bölüm: 5-) Garanti Kartı ve 6-) CE Belgesi Butonları */
+.nav-middle {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-tab.active {
+    background-color: #3b82f6;
+    font-weight: bold;
+}
+
+/* Sağ Bölüm: 3-) PDF, 4-) Word ve 7-) Bayrak Seçimi */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-pdf { background-color: #dc2626; }
+.btn-pdf:hover { background-color: #b91c1c; }
+
+/* 7-) Bayrak Seçim Combobox */
+.lang-select {
+    background-color: #334155;
+    color: white;
+    border: 1px solid #475569;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    outline: none;
+}
+
+/* Ana İçerik Alanı (Sidebar + A4 Önizleme) */
+.app-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sol Taraf: Değişebilir Kısımlar İçin Input Box Alanı */
+.sidebar {
+    width: 320px;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.sidebar h3 {
+    font-size: 16px;
+    color: #1e293b;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: #3b82f6;
+}
+
+/* Sağ Taraf: Grafik Motorunun Render Alanı (A4) */
+.preview-area {
+    flex: 1;
+    background-color: #e2e8f0;
+    padding: 40px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+/* A4 Belge Kuralları */
+.a4-page {
+    width: 210mm;
+    height: 297mm;
+    background-color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    padding: 20mm;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    color: #000000;
+}
+
+/* Belge Tasarım Kuralları */
+.document-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+}
+
+.document-body {
+    font-size: 14px;
+    line-height: 1.6;
+    flex: 1;
+}
+
+/* Dinamik Değişkenlerin Yerleşimi */
+.variable-zone {
+    margin-top: 50px;
+    border-top: 1px dashed #cbd5e1;
+    padding-top: 20px;
+}
+
+.data-row {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.data-label {
+    font-weight: bold;
+    display: inline-block;
+    width: 150px;
+}
+
+.data-value {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* ========== GARANTİ SAYFALARI (garantim.js) ========== */
+
+.warranty-page {
+    height: auto !important;
+    min-height: 297mm;
+    padding-top: 1.0cm;
+    padding-right: 2.1cm;
+    padding-bottom: 1.5cm;
+    padding-left: 2.1cm;
+    gap: 10px;
+}
+
+/* Sayfa alt bilgisi / numara */
+.page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+    margin-top: 10px;
+}
+.page-number {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* İçerik alanı */
+.warranty-content {
+    flex: 1;
+    font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 10pt;
+    line-height: 1.55;
+    text-align: justify;
+}
+
+/* Markdown'tan gelen HTML stilleri */
+.warranty-content h1 {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #000000;
+    margin: 20px 0 12px;
+    text-align: justify;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.warranty-content h2 {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #000000;
+    margin: 18px 0 10px;
+}
+.warranty-content h3 {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #000000;
+    margin: 14px 0 8px;
+}
+.warranty-content p {
+    font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 10pt;
+    margin-bottom: 8px;
+}
+.warranty-content strong {
+    font-weight: 700;
+}
+.warranty-content ul {
+    margin: 0 0 10px 0;
+    padding: 0 0 0 20px;
+    list-style: disc;
+}
+.warranty-content li {
+    font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 10pt;
+    margin-bottom: 6px;
+    text-align: justify;
+}
+.warranty-content li:last-child {
+    margin-bottom: 0;
+}
+
+/* ========== KAPAK SAYFASI (kapak.js) ========== */
+
+.cover-page {
+    padding: 0 !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.cover-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('kapak.jpg');
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+}
+
+.cover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.75);
+    z-index: 2;
+}
+
+.cover-content {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 3cm 2.1cm;
+    text-align: center;
+}
+
+.cover-logo {
+    margin-bottom: 30px;
+}
+.cover-logo img {
+    max-height: 80px;
+}
+
+.cover-title {
+    font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 28pt;
+    font-weight: bold;
+    color: #1e293b;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.cover-divider {
+    width: 60%;
+    height: 2px;
+    background-color: #1e293b;
+    margin: 15px 0;
+}
+
+.cover-info {
+    margin: 20px 0;
+    text-align: left;
+    width: 80%;
+}
+.cover-info-row {
+    margin-bottom: 12px;
+    font-size: 12pt;
+}
+.cover-label {
+    font-weight: bold;
+    color: #334155;
+    display: inline-block;
+    width: 100px;
+}
+.cover-value {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.cover-footer-text {
+    font-size: 10pt;
+    color: #64748b;
+    margin-top: 10px;
+}
+
+.cover-page .page-footer {
+    display: none;
+}
+
+/* ========== YAZICI / PDF ÇIKTISI ========== */
+@media print {
+    body {
+        background: white !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+    .navbar, .sidebar {
+        display: none !important;
+    }
+    .app-container {
+        display: block !important;
+        overflow: visible !important;
+    }
+    .preview-area {
+        padding: 0 !important;
+        gap: 0 !important;
+        overflow: visible !important;
+        background: white !important;
+        display: block !important;
+    }
+    .a4-page {
+        box-shadow: none !important;
+        page-break-after: always;
+        margin: 0 !important;
+    }
+    .a4-page:last-child {
+        page-break-after: avoid;
+    }
+}
+}
+
+/* ========== YENİ KAPAK SAYFASI (Canva Ölçülerine Göre) ========== */
+
+.cover-page-new {
+    padding: 0 !important;
+    position: relative;
+    background-color: #ffffff;
+    overflow: hidden;
+    height: 297mm !important;
+    display: block !important;
+}
+
+/* Sol Kenar Kırmızı Dikdörtgen */
+.cover-red-bar {
+    position: absolute;
+    left: 2.1cm;
+    top: 2.1cm;
+    width: 0.93cm;
+    height: 25.5cm;
+    background-color: #ff0000;
+    z-index: 1;
+}
+
+/* Kırmızı barın sağındaki ana içerik alanı */
+.cover-body {
+    position: absolute;
+    left: 4.41cm;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 2.1cm;
+    padding-right: 1.5cm;
+}
+
+/* WARRANTY CARD Başlık */
+.cover-main-title {
+    margin-top: calc(7.07cm - 2.1cm);
+    font-family: 'Calibri', 'Segoe UI', sans-serif;
+    font-size: 39pt;
+    font-weight: bold;
+    color: #ff0000;
+    letter-spacing: 2px;
+    line-height: 1.1;
+}
+
+/* Bilgi Kutusu (Serial Number, Machine Model, Delivery Date) */
+.cover-info-box {
+    margin-top: calc(11.66cm - 7.07cm - 2.5cm);
+    width: 14.71cm;
+    font-family: 'Fira Sans', 'Segoe UI', sans-serif;
+    font-size: 15pt;
+    font-weight: bold;
+    color: #ff0000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3cm;
+}
+
+.cover-info-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3cm;
+}
+
+.info-label {
+    display: inline-block;
+    min-width: 3.8cm;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #ff0000;
+    font-weight: bold;
+    border-bottom: 1.5px solid #ff0000;
+    flex: 1;
+    padding-bottom: 2px;
+    min-width: 4cm;
+}
+
+/* Dolfin Logo Kutusu */
+.cover-logo-box {
+    margin-top: calc(17.37cm - 11.66cm - 2.73cm);
+    width: 12.9cm;
+    height: 4.56cm;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.cover-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.cover-logo-placeholder {
+    font-family: 'Calibri', sans-serif;
+    font-size: 20pt;
+    font-weight: bold;
+    color: #94a3b8;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border: 2px dashed #cbd5e1;
+}
+
+.cover-page-new .page-footer {
+    display: none;
+}
