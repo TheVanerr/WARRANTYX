@@ -119,8 +119,8 @@
   function scriptYukle(src) {
     return new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      // Yayında sürüm eklenir: yeni sürümde eski dosya önbellekten gelmez
-      s.src = WxBoot.VERSION.surum ? `${src}?v=${WxBoot.VERSION.surum}` : src;
+      // Yayında içerik özeti eklenir: dosya değişince eskisi önbellekten gelmez
+      s.src = WxBoot.versioned(src);
       s.onload = resolve;
       s.onerror = () => reject(new Error(`${src} yüklenemedi. "npm run gomulu" ile yeniden üretin.`));
       document.head.appendChild(s);
@@ -244,6 +244,11 @@
     await kaydetSimdi();
     state.acik = null;
     anaEkran(['ayarlar', 'veritabani'].includes(h) ? h : 'belgeler');
+    // Uygulama kısayolu (görev çubuğu simgesinde sağ tık): yeni belge penceresi açılır, adres belgelere döner
+    if (h === 'yeni') {
+      history.replaceState(null, '', '#/');
+      yeniBelgePenceresi(null);
+    }
   }
 
   /* ─── Ana ekran ──────────────────────────────────────── */
@@ -1201,6 +1206,28 @@
     route();
     WxBoot.watchVersion(yeniSurumBandi);
   }
+
+  /* ─── Uygulama olarak yükleme (PWA) ──────────────────── */
+
+  // Tarayıcı kurulabilir dediğinde düğme görünür; kurulmuşsa ya da uygulama penceresindeyse görünmez
+  let kurulum = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    kurulum = e;
+    $('btnKur').hidden = false;
+  });
+  window.addEventListener('appinstalled', () => {
+    kurulum = null;
+    $('btnKur').hidden = true;
+    toast('WarrantyX yüklendi: masaüstünden ya da başlat menüsünden kendi penceresinde açılır.');
+  });
+  $('btnKur').addEventListener('click', async () => {
+    if (!kurulum) return;
+    const e = kurulum;
+    kurulum = null;
+    $('btnKur').hidden = true;
+    await e.prompt();
+  });
 
   // Test ve geliştirme için: tarayıcı konsolundan ya da otomatik denemeden erişilir
   window.WxApp = { state, pdfOlustur, onizle, belgeleriOku, ayarlariOku };

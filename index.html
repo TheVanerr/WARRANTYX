@@ -6,7 +6,15 @@
   <!-- Yayında tools/yayin-hazirla.js sürümü basar; dosyadan açılan kopyada boş kalır -->
   <meta name="wx-surum" content="">
   <title>WarrantyX · Dolfin Garanti Belgesi</title>
-  <link rel="icon" href="data:,">
+  <!-- Uygulama olarak yükleme (PWA): masaüstü, başlat menüsü, telefonda ana ekran -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#14161b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WarrantyX">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="icon" href="assets/simge/simge-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/simge/simge-apple-180.png">
   <link rel="stylesheet" href="codes/tema.css">
   <link rel="stylesheet" href="codes/belge.css">
 </head>
@@ -35,6 +43,7 @@
         <p>WarrantyX · Endüstriyel parça yıkama makineleri · TR · EN · DE</p>
       </div>
       <div class="home-actions">
+        <button type="button" class="btn" id="btnKur" hidden title="Masaüstüne ve başlat menüsüne ekler; kendi penceresinde açılır">Uygulama olarak yükle</button>
         <button type="button" class="btn btn-primary" id="btnNew">+ Yeni Garanti Belgesi</button>
       </div>
     </div>

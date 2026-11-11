@@ -6,17 +6,31 @@ Dolfin endüstriyel parça yıkama makineleri için garanti belgesi programı. B
 
 Program iki yoldan açılır, ikisi de aynı `warrantyx-veri` deposuna bağlanır:
 
-- **Yayındaki adres:** <https://thevanerr.github.io/WARRANTYX/> (Chrome veya Edge). Kurulum gerekmez, her zaman son sürüm açılır. Program yalnız `warrantyx-veri` deposuna erişimi olan bir erişim anahtarıyla açılır. Anahtar bu bilgisayarda bir kez girilir. Yerel mod ve depo seçimi yoktur.
+- **Yayındaki adres:** <https://thevanerr.github.io/WARRANTYX/> (Chrome veya Edge). Kurulum gerekmez, her zaman son sürüm açılır. Uygulama olarak da yüklenebilir (aşağıda). Program yalnız `warrantyx-veri` deposuna erişimi olan bir erişim anahtarıyla açılır. Anahtar bu bilgisayarda bir kez girilir. Yerel mod ve depo seçimi yoktur.
 - **Dosyadan:** `index.html` dosyasına çift tıklanır. Geliştirme ve internetsiz deneme içindir. Bu yolda yerel mod ve depo seçimi vardır.
+
+### Uygulama olarak yükleme
+
+Yayındaki program bir web uygulamasıdır (PWA). Yüklenince masaüstünde ve başlat menüsünde kendi simgesiyle durur, adres çubuğu olmayan kendi penceresinde açılır. Bağlantıyı bilen herkes yükleyebilir. Belgeleri görmek için yine anahtar gerekir.
+
+- **Chrome / Edge (Windows):** Ana ekrandaki **Uygulama olarak yükle** düğmesi ya da adres çubuğunun sağındaki yükle simgesi. Görev çubuğundaki simgeye sağ tıklayınca **Yeni Garanti Belgesi** kısayolu çıkar.
+- **Android (Chrome):** Menü (⋮) → **Uygulamayı yükle** ya da **Ana ekrana ekle**.
+- **iPhone / iPad (Safari):** Paylaş → **Ana Ekrana Ekle**. iPhone'da ana ekrandaki uygulamanın saklama alanı Safari'den ayrıdır, anahtar uygulamada bir kez daha girilir.
+
+Windows ve Android'de yüklenen uygulama tarayıcıyla aynı saklama alanını kullanır, anahtar yeniden sorulmaz. Arayüz bilgisayar ekranı için tasarlandı; telefonda açılır ama düzenleyici dar ekranda sıkışık durur.
 
 ### Yayın ve güncelleme
 
 `main` dalına her gönderimde `.github/workflows/yayin.yml` testleri çalıştırır. Testler geçerse program 1-2 dakika içinde yayına çıkar. Test geçmezse yayın olmaz ve kullananlar önceki sürümle devam eder.
 
-- Yeni açılan program son sürümle gelir. Her dosyanın adresinde sürüm vardır, bu yüzden tarayıcı önbellekten eski dosya getirmez.
-- Açık kalan programın sağ altında "Programın yeni sürümü yayında · Yenile" çıkar. Yenilemeden önce açık belge bu bilgisayara kaydedilir.
+- **Açılış ve yenileme:** Uygulama her açılışta ve yenilemede (F5) önce sunucuya sorar, yeni sürüm yayındaysa o açılır. Ayrıca bir şey yapmak gerekmez.
+- **İnternet yokken:** Son açılan sürüm açılır, sunucu 4 saniyede yanıt vermezse de öyle olur. PDF de alınır. Belgeler zaten bu bilgisayarda saklıdır, internet gelince depoya gönderilir.
+- **Açık kalan program:** Sağ altta "Programın yeni sürümü yayında · Yenile" çıkar. Yenilemeden önce açık belge bu bilgisayara kaydedilir.
+- **Gereksiz indirme yok:** Her script ve stilin adresinde içeriğinin özeti vardır (`app.js?v=3f9c…`). Değişen dosya yeni adresle iner, değişmeyen dosya inmez; 1,9 MB'lık yazı tipi dosyası yalnız değişince iner.
 - Açık sürüm Veritabanı sekmesinde yazar (`Program: yayındaki sürüm 1a2b3c4`).
-- Siteye yalnız `index.html`, `codes/`, `ortak/` ve `assets/` gider. `_eski/`, `test/` ve `tools/` gitmez. Yerelde denemek için: `node tools/yayin-hazirla.js _site`.
+- **Siteye gidenler:** Yalnız `index.html`, `manifest.webmanifest`, `sw.js`, `codes/`, `ortak/` ve `assets/`. `_eski/`, `test/` ve `tools/` gitmez. Yerelde denemek için: `node tools/yayin-hazirla.js _site`.
+
+`sw.js` uygulama katmanıdır (service worker): açılışı ve çevrimdışı çalışmayı yönetir. Yalnız yayında kaydedilir. GitHub API'sine giden isteklere, yani belgelere, hiç karışmaz.
 
 Bir kez yapılacak ayar: depo **Settings → General → Change visibility → Public**, sonra **Settings → Pages → Source: GitHub Actions**. Ücretsiz hesapta Pages yalnız açık depodan yayınlanır. Kod açık olur ama belgeler açılmaz: belgeler özel `warrantyx-veri` deposunda durur ve anahtar olmadan okunamaz.
 
@@ -96,7 +110,10 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 | `ortak/` | Veritabanı (`ppx-db.js`) ve GitHub bağlantısı (`ppx-github.js`) P&PX'ten; açılış ve bağlantı (`wx-boot.js`) |
 | `assets/` | Dolfin logosu, yazı tipleri (OFL lisanslı) ve gömülü kopyaları |
 | `tools/gomulu-uret.js` | `assets/gomulu-*.js` üreticisi |
-| `tools/yayin-hazirla.js` | Yayın sitesini hazırlar: dosyaları kopyalar, sürüm damgası ve `surum.json` yazar |
+| `manifest.webmanifest` | Uygulama bilgisi: ad, simgeler, kendi penceresi, Yeni Garanti Belgesi kısayolu |
+| `sw.js` | Uygulama katmanı (service worker): açılışta son sürüm, internetsiz açılış |
+| `assets/simge/` | Uygulama simgeleri (kırmızı bantlı garanti belgesi kapağı); `tools/simge-uret.ps1` üretir |
+| `tools/yayin-hazirla.js` | Yayın sitesini hazırlar: dosyaları kopyalar, içerik özetlerini, sürüm damgasını, `sw.js` dosya listesini ve `surum.json` yazar |
 | `.github/workflows/yayin.yml` | `main` dalına gönderimde test ve GitHub Pages yayını |
 | `test/` | Birim ve veritabanı testleri (sahte GitHub ile) |
 | `_eski/` | Önceki garanti dosyaları; içerikleri bir dosya kaymış, eşleşme `_eski/OKU.md` içinde |
@@ -115,4 +132,4 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 npm test
 ```
 
-Kayıt modeli, üç dilin metin yapısı, boş `warrantyx-veri` deposuna ilk yazma, iki bilgisayar arası eşitleme, PDF'e JPEG gömme ve yayın sitesinin hazırlanması (sürüm damgası, her dosyanın sitede olması) denenir.
+Kayıt modeli, üç dilin metin yapısı, boş `warrantyx-veri` deposuna ilk yazma, iki bilgisayar arası eşitleme, PDF'e JPEG gömme, yayın sitesinin hazırlanması (içerik özetleri, her dosyanın sitede olması, `sw.js` dosya listesi) ve manifest simgeleri denenir.

@@ -19,9 +19,30 @@
   const versionMeta = document.querySelector('meta[name="wx-surum"]');
   const VERSION = {
     surum: (versionMeta && versionMeta.content) || '',
-    tarih: (versionMeta && versionMeta.dataset.tarih) || ''
+    tarih: (versionMeta && versionMeta.dataset.tarih) || '',
+    /** Sonradan yüklenen dosyaların içerik özeti */
+    dosyalar: (() => {
+      try {
+        return JSON.parse(versionMeta.dataset.dosyalar || '{}');
+      } catch {
+        return {};
+      }
+    })()
   };
   const PUBLISHED = !!VERSION.surum;
+
+  /** Sonradan yüklenen dosyanın adresi: yayında içerik özeti eklenir, değişmeyen dosya önbellekten gelir */
+  const versioned = (src) => {
+    const v = VERSION.dosyalar[src] || VERSION.surum;
+    return v ? `${src}?v=${v}` : src;
+  };
+
+  // Yayında uygulama katmanı (sw.js): kurulabilir uygulama, çevrimdışı açılış, açılışta son sürüm
+  if (PUBLISHED && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => { /* uygulama katmanı olmadan da çalışır */ });
+    });
+  }
 
   const README = {
     message: 'WarrantyX veri deposu',
@@ -161,6 +182,7 @@
     DEFAULT_REPO,
     VERSION,
     PUBLISHED,
+    versioned,
     ready() {
       if (!readyPromise) readyPromise = connect();
       return readyPromise;
