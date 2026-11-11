@@ -731,7 +731,7 @@
     if (!window.WX_YAZITIPI) await scriptYukle('assets/gomulu-yazitipi.js');
     await PidPdfDom.loadFonts(async (file) => {
       const b64 = window.WX_YAZITIPI && window.WX_YAZITIPI[file];
-      return b64 ? { ok: true, bytes: PpxDb.base64ToBytes(b64) } : { ok: false };
+      return b64 ? { ok: true, bytes: WxDb.base64ToBytes(b64) } : { ok: false };
     });
   }
 
@@ -1080,7 +1080,7 @@
         say(`${res.written} dosya yüklendi, ${res.kept} dosya zaten vardı ve korundu.`, 'ok');
         veritabaniSayfasi();
       } catch (err) {
-        say(err.message.replace('P&PX yedeği', 'WarrantyX yedeği'), 'err');
+        say(err.message, 'err');
       }
     });
   }

@@ -1,5 +1,4 @@
-/* P&PX ortak katmanından olduğu gibi alındı; P&PX'te düzeltilirse bu kopya da güncellenmeli.
-   P&PX ortak veritabanı: önce bu cihaza yazar, sonra Git deposuna gönderir.
+/* WarrantyX veritabanı: önce bu cihaza yazar, sonra Git deposuna gönderir.
    Her kayıt anında tarayıcı veritabanına (IndexedDB) girer, internet kesilse de çalışma kaybolmaz.
    Depo tarafı yalnız commit bilir: değişen dosyalar toplanır, tek commit olarak gönderilir.
    Eşitleme üç yönlü karşılaştırmadır: bu cihazdaki hâl, depodaki hâl, ikisinin son ortak hâli (base).
@@ -7,7 +6,7 @@
 
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) module.exports = factory();
-  else root.PpxDb = factory();
+  else root.WxDb = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
@@ -395,12 +394,13 @@
         at: r.at,
         b64: r.bytes ? bytesToBase64(r.bytes) : null
       }));
-      return { format: 'ppx-yedek', version: 1, createdAt: new Date(now()).toISOString(), files };
+      return { format: 'warrantyx-yedek', version: 1, createdAt: new Date(now()).toISOString(), files };
     }
 
     /** Var olan dosyalar overwrite istenmedikçe korunur */
     async function importBackup(backup, opts) {
-      if (!backup || backup.format !== 'ppx-yedek' || !Array.isArray(backup.files)) throw new Error('Bu dosya P&PX yedeği değil');
+      // Önceki sürümün indirdiği yedekler de yüklenir
+      if (!backup || !['warrantyx-yedek', 'ppx-yedek'].includes(backup.format) || !Array.isArray(backup.files)) throw new Error('Bu dosya WarrantyX yedeği değil');
       let written = 0;
       let kept = 0;
       for (const file of backup.files) {

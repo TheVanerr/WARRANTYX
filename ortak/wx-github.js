@@ -1,11 +1,11 @@
-/* P&PX ortak katmanından alındı; tek fark: depo ilk açılırken yazılan README options.readme ile verilir.
+/* Depo ilk açılırken yazılan README options.readme ile verilir.
    GitHub deposu veritabanı olarak. Sunucu kodu yoktur, tarayıcı doğrudan GitHub API'siyle konuşur.
    Ayrı dosya yazmak yerine Git'in kendi yapı taşları kullanılır: ağaç, commit, dal başı.
    Dal başı "yalnız ileri" güncellenir; başka cihaz arada göndermişse GitHub reddeder, hiçbir şey ezilmez. */
 
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) module.exports = factory();
-  else root.PpxGitHub = factory();
+  else root.WxGitHub = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
@@ -123,8 +123,8 @@
 
     /** Boş depoda ağaç ve commit oluşturulamaz; ilk commit dosya arayüzüyle atılır */
     const readme = options.readme || {
-      message: 'P&PX veri deposu',
-      text: '# P&PX veri deposu\n\nBu depo P&PX programi tarafindan yonetilir. Dosyalari elle degistirmeyin.\n'
+      message: 'WarrantyX veri deposu',
+      text: '# WarrantyX veri deposu\n\nBu depo WarrantyX programı tarafından yönetilir. Dosyaları elle değiştirmeyin.\n'
     };
     async function init() {
       await send('PUT', '/contents/README.md', {

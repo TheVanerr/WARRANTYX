@@ -1,6 +1,6 @@
 # WarrantyX
 
-Dolfin endüstriyel parça yıkama makineleri için garanti belgesi programı. Belge Türkçe, İngilizce ya da Almanca hazırlanır, tek tıkla vektörel PDF alınır. Veritabanı özel bir GitHub deposudur (`warrantyx-veri`): ücretsizdir, sunucu ve kurulum gerektirmez, her kayıt geçmişte durur. Arayüz, veritabanı ve PDF motoru P&PX ile aynı yapıdadır.
+Dolfin endüstriyel parça yıkama makineleri için garanti belgesi programı. Belge Türkçe, İngilizce ya da Almanca hazırlanır, tek tıkla vektörel PDF alınır. Veritabanı özel bir GitHub deposudur (`warrantyx-veri`): ücretsizdir, sunucu ve kurulum gerektirmez, her kayıt geçmişte durur.
 
 ## Başlatma
 
@@ -106,8 +106,8 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 | `codes/metin.js` | TR, EN, DE metinler |
 | `codes/kayit.js` | Belge ve ayar şeması, depo yolları, dosya adı |
 | `codes/pdf.js`, `codes/pdf-dom.js` | Vektörel PDF motoru (P&ID'den; JPEG görsel ve `object-fit: cover` eki, ileride fotoğraf için) |
-| `codes/tema.css` | Arayüz teması (P&PX ile aynı) |
-| `ortak/` | Veritabanı (`ppx-db.js`) ve GitHub bağlantısı (`ppx-github.js`) P&PX'ten; açılış ve bağlantı (`wx-boot.js`) |
+| `codes/tema.css` | Arayüz teması (koyu tema, Dolfin kırmızısı) |
+| `ortak/` | Veritabanı (`wx-db.js`), GitHub bağlantısı (`wx-github.js`), açılış ve bağlantı (`wx-boot.js`) |
 | `assets/` | Dolfin logosu, yazı tipleri (OFL lisanslı) ve gömülü kopyaları |
 | `tools/gomulu-uret.js` | `assets/gomulu-*.js` üreticisi |
 | `manifest.webmanifest` | Uygulama bilgisi: ad, simgeler, kendi penceresi, Yeni Garanti Belgesi kısayolu |
@@ -117,7 +117,6 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 | `.github/workflows/yayin.yml` | `main` dalına gönderimde test ve GitHub Pages yayını |
 | `test/` | Birim ve veritabanı testleri (sahte GitHub ile) |
 | `_eski/` | Önceki garanti dosyaları; içerikleri bir dosya kaymış, eşleşme `_eski/OKU.md` içinde |
-| `P&PX/` | Arayüz ve yapı için başvuru alınan P&PX programı (kendi deposu var) |
 
 ## Sınırlar
 

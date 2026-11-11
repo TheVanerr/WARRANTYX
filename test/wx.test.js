@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const PpxDb = require('../ortak/ppx-db.js');
-const PpxGitHub = require('../ortak/ppx-github.js');
+const WxDb = require('../ortak/wx-db.js');
+const WxGitHub = require('../ortak/wx-github.js');
 const WxKayit = require('../codes/kayit.js');
 const WxMetin = require('../codes/metin.js');
 const PidPdf = require('../codes/pdf.js');
@@ -12,9 +12,9 @@ const str = (b) => new TextDecoder().decode(b);
 const README = { message: 'WarrantyX veri deposu', text: '# WarrantyX veri deposu\n\nDolfin garanti belgeleri. Dosyaları elle değiştirmeyin.\n' };
 
 function device(hub) {
-  const remote = PpxGitHub.createRemote({ repo: hub.id, token: hub.token, fetchFn: hub.fetchFn, readme: README });
-  return PpxDb.createDb({
-    local: PpxDb.memoryLocal(),
+  const remote = WxGitHub.createRemote({ repo: hub.id, token: hub.token, fetchFn: hub.fetchFn, readme: README });
+  return WxDb.createDb({
+    local: WxDb.memoryLocal(),
     remote,
     now: () => { hub.clock.now += 1000; return hub.clock.now; },
     flushMs: 3600000
@@ -186,7 +186,7 @@ test('bir bilgisayarda oluşturulan belge öbüründe görünür, seri no deği�
 
 test('açık depoya bağlanılmaz: müşteri verisi yalnız özel depoda durur', async () => {
   const hub = createFakeGitHub({ name: 'warrantyx-veri', isPrivate: false });
-  const remote = PpxGitHub.createRemote({ repo: hub.id, token: hub.token, fetchFn: hub.fetchFn });
+  const remote = WxGitHub.createRemote({ repo: hub.id, token: hub.token, fetchFn: hub.fetchFn });
   assert.equal((await remote.info()).private, false);
 });
 
@@ -271,7 +271,7 @@ test('manifest kurulabilir uygulama ister: 192 ve 512 simge, maskable simge, ken
   assert.equal(m.display, 'standalone');
   assert.equal(m.start_url, './');
   assert.equal(m.scope, './');
-  // Aynı sitedeki başka uygulamayla (P&PX) karışmasın: kimlik depo yolu olur. './' sitenin köküne çözülür.
+  // Aynı sitedeki başka uygulamayla karışmasın: kimlik depo yolu olur. './' sitenin köküne çözülür.
   assert.equal(m.id, '/WARRANTYX/');
   assert.ok(m.name && m.short_name);
   const boyut = (rel) => {

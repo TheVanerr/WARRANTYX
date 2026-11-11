@@ -1,4 +1,4 @@
-/* WarrantyX açılışı: veritabanı bağlantısı. P&PX'in ppx-boot.js düzenini izler.
+/* WarrantyX açılışı: veritabanı bağlantısı.
    Veritabanı özel bir GitHub deposudur (warrantyx-veri). Her kayıt önce bu cihazın tarayıcı veritabanına
    (IndexedDB) yazılır, sonra en geç 1 dakikada bir tek commit olarak depoya gönderilir.
    Bağlantı ayarı ve erişim anahtarı yalnız bu tarayıcıda (localStorage) durur.
@@ -126,13 +126,13 @@
     window.addEventListener('online', () => db.sync());
   }
 
-  const remoteFor = (repo, token) => PpxGitHub.createRemote({ repo, token, readme: README });
+  const remoteFor = (repo, token) => WxGitHub.createRemote({ repo, token, readme: README });
 
   async function connect() {
     const { mode, repo, token } = settings();
     const remote = mode === 'github' ? remoteFor(repo, token) : null;
-    const local = PpxDb.indexedDbLocal(DB_NAME);
-    db = PpxDb.createDb({ local, remote, lock: await lockFn() });
+    const local = WxDb.indexedDbLocal(DB_NAME);
+    db = WxDb.createDb({ local, remote, lock: await lockFn() });
     db.onStatus(renderChip);
     renderChip(db.status());
     await db.refreshPending();
