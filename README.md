@@ -112,7 +112,7 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 | `tools/gomulu-uret.js` | `assets/gomulu-*.js` üreticisi |
 | `manifest.webmanifest` | Uygulama bilgisi: ad, simgeler, kendi penceresi, Yeni Garanti Belgesi kısayolu |
 | `sw.js` | Uygulama katmanı (service worker): açılışta son sürüm, internetsiz açılış |
-| `assets/simge/` | Uygulama simgeleri (kırmızı bantlı garanti belgesi kapağı); `tools/simge-uret.ps1` üretir |
+| `assets/simge/` | Uygulama simgeleri (koyu zeminde ağır beyaz W, altında kırmızı çizgi); `tools/simge-uret.ps1` üretir |
 | `tools/yayin-hazirla.js` | Yayın sitesini hazırlar: dosyaları kopyalar, içerik özetlerini, sürüm damgasını, `sw.js` dosya listesini ve `surum.json` yazar |
 | `.github/workflows/yayin.yml` | `main` dalına gönderimde test ve GitHub Pages yayını |
 | `test/` | Birim ve veritabanı testleri (sahte GitHub ile) |

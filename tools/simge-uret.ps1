@@ -1,6 +1,5 @@
 # Uygulama simgelerini üretir (PWA: masaüstüne / ana ekrana eklenince görünen simge).
-# Simge garanti belgesinin kapağıdır: koyu zemin, beyaz sayfa, solda tam boy kırmızı bant (Kırmızı Bant kapağı),
-# ağır başlık çubuğu, kırmızı çizgi, metin satırları ve garanti mührü.
+# Simge WarrantyX'in W harfidir: koyu zemin, ağır beyaz W, altında kapaktaki gibi kalın kırmızı çizgi.
 # Çalıştırmak için (Windows):  powershell -ExecutionPolicy Bypass -File tools/simge-uret.ps1
 
 Add-Type -AssemblyName System.Drawing
@@ -12,12 +11,16 @@ New-Item -ItemType Directory -Force $hedef | Out-Null
 $zemin = [System.Drawing.ColorTranslator]::FromHtml('#14161b')
 $kirmizi = [System.Drawing.ColorTranslator]::FromHtml('#ff0000')
 $beyaz = [System.Drawing.ColorTranslator]::FromHtml('#ffffff')
-$koyu = [System.Drawing.ColorTranslator]::FromHtml('#14161b')
-$gri = [System.Drawing.ColorTranslator]::FromHtml('#c3c8d2')
+
+# Windows'ta en ağır yazı tipi; yoksa Segoe UI Bold, o da yoksa Arial Black
+$aile = 'Arial Black'
+foreach ($ad in 'Segoe UI Black', 'Segoe UI') {
+  $f = New-Object System.Drawing.FontFamily($ad) -ErrorAction SilentlyContinue
+  if ($f) { $aile = $ad; break }
+}
 
 function Yuvarlak([single]$x, [single]$y, [single]$w, [single]$h, [single]$r) {
   $p = New-Object System.Drawing.Drawing2D.GraphicsPath
-  if ($r -le 0) { $p.AddRectangle((New-Object System.Drawing.RectangleF($x, $y, $w, $h))); return $p }
   $d = 2 * $r
   $p.AddArc($x, $y, $d, $d, 180, 90)
   $p.AddArc($x + $w - $d, $y, $d, $d, 270, 90)
@@ -27,70 +30,51 @@ function Yuvarlak([single]$x, [single]$y, [single]$w, [single]$h, [single]$r) {
   return $p
 }
 
-# tamZemin: maskable ve iOS simgesi. Zemin tüm kareyi kaplar, sayfa güvenli alanın (ortadaki daire) içinde kalır.
+# tamZemin: maskable ve iOS simgesi. Zemin tüm kareyi kaplar, W güvenli alanın (ortadaki daire) içinde kalır.
 function Ciz([int]$boy, [bool]$tamZemin, [string]$ad) {
   $bmp = New-Object System.Drawing.Bitmap($boy, $boy, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
   $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
   $g.Clear([System.Drawing.Color]::Transparent)
-
   $s = [single]$boy
+
   if ($tamZemin) {
     $g.Clear($zemin)
-    $sayfaH = 0.56 * $s
+    $genislik = 0.50 * $s
   } else {
-    $tile = Yuvarlak 0 0 $s $s (0.22 * $s)
-    $g.FillPath((New-Object System.Drawing.SolidBrush($zemin)), $tile)
-    $sayfaH = 0.66 * $s
+    $g.FillPath((New-Object System.Drawing.SolidBrush($zemin)), (Yuvarlak 0 0 $s $s (0.22 * $s)))
+    $genislik = if ($boy -lt 64) { 0.80 * $s } else { 0.64 * $s }
   }
-  $sayfaW = $sayfaH / 1.414
-  $px = ($s - $sayfaW) / 2
-  $py = ($s - $sayfaH) / 2
-  $sayfa = Yuvarlak $px $py $sayfaW $sayfaH ([Math]::Max(1, 0.025 * $sayfaH))
-  $g.FillPath((New-Object System.Drawing.SolidBrush($beyaz)), $sayfa)
 
-  # Kırmızı bant sayfanın köşelerine uysun diye sayfa şekliyle kırpılır
-  $g.SetClip($sayfa)
-  $bantW = 0.32 * $sayfaW
-  $g.FillRectangle((New-Object System.Drawing.SolidBrush($kirmizi)), $px, $py, $bantW, $sayfaH)
-  $g.ResetClip()
+  # W'yi yol olarak çizer, gerçek sınırlarına göre ölçekleyip ortalar
+  $yol = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $yol.AddString('W', (New-Object System.Drawing.FontFamily($aile)), [int][System.Drawing.FontStyle]::Bold, 100, (New-Object System.Drawing.PointF(0, 0)), [System.Drawing.StringFormat]::GenericTypographic)
+  $b = $yol.GetBounds()
+  $k = $genislik / $b.Width
+  $wH = $b.Height * $k
+  $cizgiH = [Math]::Max(2, 0.075 * $genislik)
+  $ara = 0.09 * $genislik
+  $toplam = $wH + $ara + $cizgiH
+  $x0 = ($s - $genislik) / 2
+  $y0 = ($s - $toplam) / 2
 
-  $ic = 0.13 * $sayfaW
-  $x0 = $px + $bantW + $ic
-  $w = $sayfaW - $bantW - 2 * $ic
-  $kucuk = $boy -lt 64
+  $m = New-Object System.Drawing.Drawing2D.Matrix
+  $m.Translate($x0, $y0)
+  $m.Scale($k, $k)
+  $m.Translate(-$b.X, -$b.Y)
+  $yol.Transform($m)
+  $g.FillPath((New-Object System.Drawing.SolidBrush($beyaz)), $yol)
 
-  # Ağır başlık çubuğu (model adı) ve altında kırmızı çizgi
-  $baslikH = if ($kucuk) { 0.13 * $sayfaH } else { 0.085 * $sayfaH }
-  $by = $py + 0.22 * $sayfaH
-  $g.FillRectangle((New-Object System.Drawing.SolidBrush($koyu)), $x0, $by, $w, $baslikH)
-  $cy = $by + $baslikH + 0.045 * $sayfaH
-  $g.FillRectangle((New-Object System.Drawing.SolidBrush($kirmizi)), $x0, $cy, 0.55 * $w, [Math]::Max(1, 0.028 * $sayfaH))
-
-  if (-not $kucuk) {
-    # Bilgi satırları
-    $sat = 0.03 * $sayfaH
-    $ly = $cy + 0.095 * $sayfaH
-    foreach ($oran in 1.0, 0.82, 0.92) {
-      $g.FillRectangle((New-Object System.Drawing.SolidBrush($gri)), $x0, $ly, $oran * $w, $sat)
-      $ly += 0.072 * $sayfaH
-    }
-    # Garanti mührü: sağ altta kırmızı halka ve içinde dolu daire
-    $r = 0.095 * $sayfaH
-    $mx = $x0 + $w - $r
-    $my = $py + 0.80 * $sayfaH
-    $kalem = New-Object System.Drawing.Pen($kirmizi, [single](0.022 * $sayfaH))
-    $g.DrawEllipse($kalem, $mx - $r, $my - $r, 2 * $r, 2 * $r)
-    $r2 = 0.045 * $sayfaH
-    $g.FillEllipse((New-Object System.Drawing.SolidBrush($kirmizi)), $mx - $r2, $my - $r2, 2 * $r2, 2 * $r2)
-  }
+  # Kırmızı çizgi: W'nin altında, W genişliğinin yarısı, ortada
+  $cw = 0.5 * $genislik
+  $g.FillRectangle((New-Object System.Drawing.SolidBrush($kirmizi)), ($s - $cw) / 2, $y0 + $wH + $ara, $cw, $cizgiH)
 
   $g.Dispose()
-  $yol = Join-Path $hedef $ad
-  $bmp.Save($yol, [System.Drawing.Imaging.ImageFormat]::Png)
+  $dosya = Join-Path $hedef $ad
+  $bmp.Save($dosya, [System.Drawing.Imaging.ImageFormat]::Png)
   $bmp.Dispose()
-  Write-Output ("{0}: {1} px, {2:N1} KB" -f $ad, $boy, ((Get-Item $yol).Length / 1KB))
+  Write-Output ("{0}: {1} px, {2:N1} KB ({3})" -f $ad, $boy, ((Get-Item $dosya).Length / 1KB), $aile)
 }
 
 Ciz 512 $false 'simge-512.png'
