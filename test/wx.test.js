@@ -271,6 +271,8 @@ test('manifest kurulabilir uygulama ister: 192 ve 512 simge, maskable simge, ken
   assert.equal(m.display, 'standalone');
   assert.equal(m.start_url, './');
   assert.equal(m.scope, './');
+  // Aynı sitedeki başka uygulamayla (P&PX) karışmasın: kimlik depo yolu olur. './' sitenin köküne çözülür.
+  assert.equal(m.id, '/WARRANTYX/');
   assert.ok(m.name && m.short_name);
   const boyut = (rel) => {
     const b = fs.readFileSync(path.join(root, rel));
