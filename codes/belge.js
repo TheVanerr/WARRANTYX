@@ -99,7 +99,6 @@ const WxBelge = (() => {
       <div class="wx-b-main">
         <div class="wx-b-top">
           <img class="wx-cv-logo" src="${esc(c.logo)}" alt="">
-          ${c.b.belgeNo ? `<div class="wx-cv-no"><span>${esc(k.belgeNo)}</span><b>${esc(c.b.belgeNo)}</b></div>` : ''}
         </div>
         <div class="wx-b-head">${bas(c)}</div>
         ${satirlar([
@@ -129,7 +128,7 @@ const WxBelge = (() => {
   function icSayfa(c, extraCls) {
     const page = sayfa(`wx-inner${extraCls ? ` ${extraCls}` : ''}`, c);
     const right = [c.t.belgeAdi, c.upper(c.b.model)].filter(Boolean).join(' · ');
-    const mid = [c.b.seriNo && `${c.t.kapak.seri}: ${c.b.seriNo}`, c.b.belgeNo].filter(Boolean).join(' · ');
+    const mid = c.b.seriNo ? `${c.t.kapak.seri}: ${c.b.seriNo}` : '';
     page.innerHTML = `
       <div class="wx-ph">
         <div class="wx-ph-brand"><span class="wx-ph-name">${esc(c.a.marka)}</span><span class="wx-ph-sub">${esc(c.t.markaAlt)}</span></div>
@@ -258,7 +257,6 @@ const WxBelge = (() => {
   function belgeHtml(c) {
     const t = c.t.belge;
     const b = c.b;
-    const fatura = [tarih(b.faturaTarihi), b.faturaNo].filter(Boolean).join(' / ');
     const sign = (title) => `<div class="wx-sign"><span>${esc(title)}</span><div class="wx-sign-foot"><em>${esc(t.kase)}</em><em>${esc(t.tarih)}</em></div></div>`;
     return `
       <div class="wx-cert">
@@ -267,7 +265,6 @@ const WxBelge = (() => {
             <div class="wx-cert-kicker">${esc(c.a.marka)} · ${esc(c.t.kicker)}</div>
             <h1 class="wx-cert-title">${esc(t.baslik)}</h1>
           </div>
-          ${b.belgeNo ? `<div class="wx-cert-no"><span>${esc(c.t.kapak.belgeNo)}</span><b>${esc(b.belgeNo)}</b></div>` : ''}
         </div>
         <div class="wx-cert-approval"><span>${esc(t.onay)}:</span>${deger(c.a.onayTarihiSayisi, 'wx-cert-approval-v')}</div>
         <p class="wx-cert-legal">${esc(t.yasal)}</p>
@@ -281,7 +278,7 @@ const WxBelge = (() => {
             ${kv(t.sure, sure(c))}
             ${kv(t.teslimTarihi, tarih(b.teslimTarihi))}
             ${kv(t.teslimYeri, b.teslimYeri)}
-            ${kv(t.fatura, fatura)}
+            ${kv(t.fatura, tarih(b.faturaTarihi))}
             ${kv(t.alici, b.musteri)}
           </div>
         </section>

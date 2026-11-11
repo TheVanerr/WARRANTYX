@@ -24,18 +24,22 @@ function device(hub) {
 /* ─── Kayıt modeli ──────────────────────────────────────── */
 
 test('boş belge geçerli varsayılanlarla gelir, bilinmeyen değerler düzeltilir', () => {
-  const b = WxKayit.belgeNormalize({ seriNo: '  0626051 ', dil: 'fr', kapak: 'yok', garantiYil: 'abc', garantiSaat: '3000', bolumler: { servis: false } });
+  const b = WxKayit.belgeNormalize({ seriNo: '  0626051 ', dil: 'fr', kapak: 'yok', bolumler: { servis: false } });
   assert.equal(b.seriNo, '0626051');
   assert.equal(b.dil, 'tr');
   assert.equal(b.kapak, '');
-  assert.equal(b.garantiYil, null);
-  assert.equal(b.garantiSaat, 3000);
   assert.deepEqual(b.bolumler, { kapak: true, sartlar: true, belge: true, servis: false });
   assert.equal(b.satici.ayni, true);
   assert.match(WxKayit.bosBelge().teslimTarihi, /^\d{4}-\d{2}-\d{2}$/);
 });
 
-test('belgede boş bırakılan garanti, kapak ve satıcı ayarlardan gelir', () => {
+test('eski kayıttaki belge no, fatura no, iç not ve belgeye özel garanti süresi atılır', () => {
+  const b = WxKayit.belgeNormalize({ seriNo: 'X', belgeNo: 'GB-2026-001', faturaNo: 'F-12', faturaTarihi: '2026-11-01', not: 'iç not', garantiYil: 3, garantiSaat: 4000 });
+  for (const alan of ['belgeNo', 'faturaNo', 'not', 'garantiYil', 'garantiSaat']) assert.ok(!(alan in b), `${alan} kalmamalı`);
+  assert.equal(b.faturaTarihi, '2026-11-01', 'fatura tarihi kalır: garanti bu tarihten başlar');
+});
+
+test('garanti süresi ve çalışma saati her belgede ayarlardan gelir; boş kapak ve satıcı da', () => {
   const a = WxKayit.ayarlariNormalize({ garantiYil: 2, kapakTasarimi: 'kose' });
   assert.equal(a.kapakTasarimi, 'bant', 'kaldırılan kapak tasarımı Kırmızı Bant olur');
   let e = WxKayit.etkin({ seriNo: 'X' }, a);
@@ -43,19 +47,22 @@ test('belgede boş bırakılan garanti, kapak ve satıcı ayarlardan gelir', () 
   assert.equal(e.garantiSaat, 2500);
   assert.equal(e.kapak, 'bant');
   assert.equal(e.satici.unvan, 'CNK ELEKTRONİK MAKİNE SANAYİ A.Ş.');
-  e = WxKayit.etkin({ seriNo: 'X', garantiYil: '3', kapak: 'foto', satici: { ayni: false, unvan: 'BAYİ A.Ş.' } }, a);
+  e = WxKayit.etkin({ seriNo: 'X', garantiYil: '3', garantiSaat: 4000, kapak: 'foto', satici: { ayni: false, unvan: 'BAYİ A.Ş.' } }, a);
   assert.equal(e.belge.kapak, '');
-  assert.equal(e.garantiYil, 3);
+  assert.equal(e.garantiYil, 2, 'eski belgedeki süre yok sayılır');
+  assert.equal(e.garantiSaat, 2500);
+  assert.equal(WxKayit.etkin({ seriNo: 'X' }, null).garantiYil, 1);
+  assert.equal(WxKayit.etkin({ seriNo: 'X' }, null).garantiSaat, 2500);
   assert.equal(e.kapak, 'bant');
   assert.equal(e.satici.unvan, 'BAYİ A.Ş.');
   assert.equal(e.satici.adres, '');
 });
 
 test('ayarlarda silinen alan boş kalır, eksik alan varsayılanla dolar', () => {
-  const a = WxKayit.ayarlariNormalize({ imalatci: { faks: '' }, belgeNoOnek: 'g-b!', urunCinsi: { en: 'WASHER' } });
+  const a = WxKayit.ayarlariNormalize({ imalatci: { faks: '' }, belgeNoOnek: 'GB', urunCinsi: { en: 'WASHER' } });
   assert.equal(a.imalatci.faks, '');
   assert.equal(a.imalatci.telefon, '+90 312 267 30 15 (pbx)');
-  assert.equal(a.belgeNoOnek, 'gb');
+  assert.ok(!('belgeNoOnek' in a), 'belge no öneki kaldırıldı');
   assert.equal(a.urunCinsi.en, 'WASHER');
   assert.equal(a.urunCinsi.de, 'INDUSTRIELLE TEILEREINIGUNGSMASCHINE');
 });
@@ -71,13 +78,6 @@ test('seri no dosya adı olur; sorunlu karakterler atılır, çakışma kopyası
   assert.ok(!WxKayit.belgeYoluMu('belgeler/0626051.json.catisma-20261110-120000'));
   assert.ok(!WxKayit.belgeYoluMu('belgeler/alt/x.json'));
   assert.ok(!WxKayit.belgeYoluMu('ayarlar.json'));
-});
-
-test('belge numarası yıl içinde sırayla artar', () => {
-  const now = new Date('2026-11-10T10:00:00').getTime();
-  assert.equal(WxKayit.yeniBelgeNo([], 'GB', now), 'GB-2026-001');
-  const list = [{ belgeNo: 'GB-2026-007' }, { belgeNo: 'GB-2025-030' }, { belgeNo: 'elle' }];
-  assert.equal(WxKayit.yeniBelgeNo(list, 'GB', now), 'GB-2026-008');
 });
 
 test('PDF dosya adı eski programdaki gibi: seri-müşteri-model başlık', () => {
@@ -125,7 +125,7 @@ test('şart metinlerinde doldurulmamış yer tutucu kalmaz; yapı üç dilde ayn
 
 test('İngilizce ve Almancada tekil ve çoğul doğru yazılır', () => {
   const one = WxKayit.etkin({ seriNo: 'X' }, null);
-  const two = WxKayit.etkin({ seriNo: 'X', garantiYil: 2 }, null);
+  const two = WxKayit.etkin({ seriNo: 'X' }, { garantiYil: 2 });
   assert.ok(JSON.stringify(WxMetin.sartBloklari('en', one)).includes('is 1 year or 2500'));
   assert.ok(JSON.stringify(WxMetin.sartBloklari('en', two)).includes('is 2 years or 2500'));
   assert.ok(JSON.stringify(WxMetin.sartBloklari('de', one)).includes('beträgt 1 Jahr oder'));

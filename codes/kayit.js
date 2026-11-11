@@ -1,6 +1,7 @@
 /* WarrantyX kayıtları: garanti belgesi ve ayarlar.
    Depoda düz JSON dosyası olarak durur: belgeler/<Seri No>.json ve ayarlar.json.
-   Belge yalnız kendine özgü bilgiyi tutar; boş bırakılan garanti süresi, kapak ve satıcı ayarlardan gelir.
+   Belge yalnız makineye özgü bilgiyi tutar. Garanti süresi ve çalışma saati her belgede ayarlardan gelir
+   (1 yıl veya 2500 saat); kapak ve satıcı boş bırakılırsa ayarlardan gelir.
    Bu dosya tarayıcıya bağlı değildir; Node testleri aynı kodu çalıştırır. */
 
 (function (root, factory) {
@@ -31,7 +32,6 @@
     yedekParcaYil: 10,
     kullanimOmruYil: 10,
     onayTarihiSayisi: '18.10.2010-92367',
-    belgeNoOnek: 'GB',
     imalatci: {
       unvan: 'CNK ELEKTRONİK MAKİNE SANAYİ A.Ş.',
       adres: '1. Organize Sanayi Bölgesi Orhan Işık Bulvarı No:8 SİNCAN - ANKARA',
@@ -96,7 +96,6 @@
       yedekParcaYil: positive(src.yedekParcaYil) || d.yedekParcaYil,
       kullanimOmruYil: positive(src.kullanimOmruYil) || d.kullanimOmruYil,
       onayTarihiSayisi: pick('onayTarihiSayisi'),
-      belgeNoOnek: (pick('belgeNoOnek') || d.belgeNoOnek).replace(/[^\p{L}\p{N}]/gu, '').slice(0, 8) || d.belgeNoOnek,
       imalatci: firma(src.imalatci, d.imalatci)
     };
   }
@@ -114,26 +113,21 @@
     return {
       surum: 1,
       seriNo: clean(src.seriNo),
-      belgeNo: clean(src.belgeNo),
       model: clean(src.model),
       musteri: clean(src.musteri),
       teslimTarihi: isoDate(src.teslimTarihi),
       teslimYeri: clean(src.teslimYeri),
       faturaTarihi: isoDate(src.faturaTarihi),
-      faturaNo: clean(src.faturaNo),
       dil: DILLER.includes(src.dil) ? src.dil : 'tr',
       kapak: KAPAKLAR.includes(src.kapak) ? src.kapak : '',
-      garantiYil: positive(src.garantiYil),
-      garantiSaat: positive(src.garantiSaat),
       satici: Object.assign({ ayni: satici.ayni !== false }, firma(satici)),
       bolumler: Object.fromEntries(BOLUMLER.map((k) => [k, bolum[k] !== false])),
-      not: text(src.not).trim(),
       olusturma: clean(src.olusturma),
       guncelleme: clean(src.guncelleme)
     };
   }
 
-  /** Belgede boş bırakılanlar ayarlardan tamamlanır: belge bu değerlerle basılır */
+  /** Belge bu değerlerle basılır: garanti süresi ayarlardan, boş bırakılan kapak ve satıcı ayarlardan */
   function etkin(belge, ayarlar) {
     const b = belgeNormalize(belge);
     const a = ayarlariNormalize(ayarlar);
@@ -141,8 +135,8 @@
       belge: b,
       ayarlar: a,
       kapak: b.kapak || a.kapakTasarimi,
-      garantiYil: b.garantiYil || a.garantiYil,
-      garantiSaat: b.garantiSaat || a.garantiSaat,
+      garantiYil: a.garantiYil,
+      garantiSaat: a.garantiSaat,
       yedekParcaYil: a.yedekParcaYil,
       kullanimOmruYil: a.kullanimOmruYil,
       imalatci: a.imalatci,
@@ -175,20 +169,6 @@
 
   /** Çakışma kopyaları (.catisma-…) ve alt klasörler belge sayılmaz */
   const belgeYoluMu = (path) => new RegExp(`^${BELGE_DIR}/[^/]+\\.json$`).test(path);
-
-  /** Yılın sıradaki belge numarası: GB-2026-001 */
-  function yeniBelgeNo(belgeler, onek, now) {
-    const year = new Date(now || Date.now()).getFullYear();
-    const prefix = `${onek || VARSAYILAN_AYARLAR.belgeNoOnek}-${year}-`;
-    let max = 0;
-    for (const b of belgeler || []) {
-      const no = clean(b && b.belgeNo);
-      if (!no.startsWith(prefix)) continue;
-      const n = parseInt(no.slice(prefix.length), 10);
-      if (Number.isFinite(n) && n > max) max = n;
-    }
-    return `${prefix}${String(max + 1).padStart(3, '0')}`;
-  }
 
   /** "0626051-DÜNYA-ULT M200 3B GARANTİ BELGESİ TR-EN.pdf" */
   function pdfDosyaAdi(belge, baslik, diller) {
@@ -224,7 +204,6 @@
     seriHatasi,
     belgeYolu,
     belgeYoluMu,
-    yeniBelgeNo,
     pdfDosyaAdi,
     encode,
     decode

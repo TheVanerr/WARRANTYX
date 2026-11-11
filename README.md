@@ -54,14 +54,14 @@ Başka bir bilgisayarda yayındaki adresi açıp anahtarı girmek yeterlidir, be
 
 ## Kullanım
 
-- **Yeni Garanti Belgesi:** Seri No ve makine modeli yeterlidir. Alıcı firma, teslim tarihi ve belge dili de burada seçilir. Belge no yıl içinde sırayla verilir (`GB-2026-001`).
+- **Yeni Garanti Belgesi:** Seri No ve makine modeli yeterlidir. Alıcı firma, teslim tarihi ve belge dili de burada seçilir. Belgeyi Seri No tanımlar, ayrıca belge numarası yoktur.
 - **Düzenleyici:** Solda bilgiler, ortada A4 önizleme, sağda bölümler. Her değişiklik kendiliğinden kaydedilir.
 - **Kapak (Kırmızı Bant)** P&ID kapak stüdyosunun dilindedir: solda tam boy kırmızı bant, içinde dikey dev GARANTİ yazısı ve seri no; harf aralıklı kırmızı üst başlık, ağır büyük model adı, kırmızı çizgi, alıcı firma; gri etiketli bilgi satırları (Seri No, Teslim Tarihi, Alıcı Firma, Garanti Süresi, Cinsi) ve büyük rakamlı garanti göstergeleri (1 YIL · 2500 SAAT · 10 YIL). Model yazılmamışsa başlık "GARANTİ BELGESİ" olur, uzun model adı kendiliğinden küçülür.
 - **Bölümler:** Kapak, garanti şartları, garanti belgesi (firma ve ürün bilgileri, imalatçı ve satıcı için kaşe / imza kutuları), servis kayıt sayfası. İstenmeyen bölüm kapatılır.
 - **Garanti şartları** metni olduğu gibi basılır, yalnız düzen eklenir: paragraf ve maddeler 1., 2., … diye numaralanır, ":" ile biten maddenin altındaki koşullar a), b), c) olur; numaralar ayrı sütunda hizalı, metin sola yaslıdır. Sayfalara kendiliğinden bölünür; başlık ve giriş maddesi sayfa sonunda yalnız kalmaz. Son sayfaya yalnız birkaç satır taşarsa metin biraz sıkılaştırılıp tek sayfaya alınır.
 - **Satıcı firma** varsayılan olarak imalatçıyla aynıdır. Farklıysa düğme kapatılıp satıcının bilgileri yazılır; boş alanlar elle doldurulacak çizgi olarak basılır.
-- **Garanti süresi ve çalışma saati** belgede boş bırakılırsa Ayarlar'daki değer kullanılır. Değerler şart metnine de yazılır ("1 yıl veya 2500 (çalışma) saat").
-- **Benzer belge oluştur:** Aynı model ve müşteriye giden makinede model, müşteri, teslim, garanti ve satıcı bilgileri kopyalanır.
+- **Garanti süresi ve çalışma saati** her belgeye kendiliğinden yazılır: 1 yıl veya 2500 (çalışma) saat, hangisi önce dolarsa. Değer belgede değil Ayarlar sekmesinde durur ve şart metnine de yazılır. Garanti süresi fatura tarihinden başlar; Fatura Tarihi boş bırakılırsa belgede elle doldurulacak çizgi olarak basılır.
+- **Benzer belge oluştur:** Aynı model ve müşteriye giden makinede model, müşteri, teslim ve satıcı bilgileri kopyalanır, fatura tarihi boş gelir.
 - **Kısayollar:** Ctrl+S depoya hemen gönderir, Ctrl+P PDF penceresini açar.
 
 ## PDF
@@ -75,7 +75,7 @@ PDF yazdırma penceresi olmadan doğrudan üretilir (P&ID motorundaki `pdf.js` /
 ```
 warrantyx-veri/
 ├── README.md               ilk bağlantıda program yazar
-├── ayarlar.json            firma bilgileri, garanti varsayılanları, varsayılan kapak
+├── ayarlar.json            firma bilgileri, garanti süresi, varsayılan kapak
 └── belgeler/
     └── 0626051.json        her garanti belgesi bir dosya, dosya adı = Seri No
 ```
@@ -92,7 +92,7 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 
 ## Metni ve firma bilgisini değiştirme
 
-- **Firma, ürün cinsi, garanti varsayılanları, onay tarihi ve sayısı, belge no öneki:** Ayarlar sekmesi.
+- **Firma, ürün cinsi, garanti süresi ve çalışma saati, onay tarihi ve sayısı:** Ayarlar sekmesi.
 - **Garanti şartları ve belge yazıları:** `codes/metin.js`. Şartlar sade Markdown'dır (`#` başlık, `##` ara başlık, `>` vurgulu kutu, `*` madde, `**kalın**`, `{{yer tutucu}}`). Üç dilin yapısı aynı kalmalıdır; `npm test` denetler.
 - **Logo, yazı tipi:** `assets/` altındaki dosyayı değiştirip `npm run gomulu` çalıştırın. Dosyadan açılan sayfa diskteki dosyayı programla okuyamadığı için görseller ve yazı tipleri `assets/gomulu-*.js` olarak programa gömülür.
 

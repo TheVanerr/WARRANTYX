@@ -277,7 +277,7 @@
     }
     const q = $('docSearch').value.trim().toLocaleLowerCase('tr');
     const hits = state.belgeler.filter(({ belge: b }) =>
-      !q || [b.seriNo, b.model, b.musteri, b.belgeNo].some((v) => v.toLocaleLowerCase('tr').includes(q)));
+      !q || [b.seriNo, b.model, b.musteri].some((v) => v.toLocaleLowerCase('tr').includes(q)));
     $('docResult').textContent = q ? `${hits.length} / ${state.belgeler.length} belge` : `${state.belgeler.length} belge`;
     const list = $('docList');
     if (!hits.length) {
@@ -297,7 +297,6 @@
           <div class="dc-customer">${vurgula(b.musteri || 'Müşteri yazılmadı', q)}</div>
           <div class="dc-chips">
             <span class="dc-chip lang">${esc(b.dil.toUpperCase())}</span>
-            ${b.belgeNo ? `<span class="dc-chip red">${vurgula(b.belgeNo, q)}</span>` : ''}
             ${b.teslimTarihi ? `<span class="dc-chip">Teslim ${esc(K.tarihYaz(b.teslimTarihi))}</span>` : ''}
           </div>
           <div class="dc-meta">${b.guncelleme ? `Güncellendi ${esc(zamanYaz(b.guncelleme))}` : ''}</div>
@@ -332,7 +331,7 @@
     let dil = base.dil || 'tr';
     const title = kaynak ? 'Benzer garanti belgesi' : 'Yeni garanti belgesi';
     const intro = kaynak
-      ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri, teslim, garanti ve satıcı bilgileri kopyalanır. Fatura bilgisi ve belge numarası yenilenir.</p>`
+      ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri, teslim ve satıcı bilgileri kopyalanır. Fatura tarihi boş gelir.</p>`
       : '<p>Diğer bilgileri belgeyi açınca tamamlayabilirsiniz.</p>';
     pencere(`
       <h2>${title}</h2>
@@ -376,10 +375,7 @@
           musteri: v('musteri'),
           teslimTarihi: v('teslimTarihi'),
           dil,
-          belgeNo: K.yeniBelgeNo(state.belgeler.map((x) => x.belge), state.ayarlar.belgeNoOnek),
           faturaTarihi: kaynak ? '' : base.faturaTarihi,
-          faturaNo: kaynak ? '' : base.faturaNo,
-          not: kaynak ? '' : base.not,
           olusturma: now,
           guncelleme: now
         }));
@@ -406,24 +402,17 @@
     { key: 'seriNo', label: 'Seri No', ph: '0626051', help: 'Depoda dosya adı olur: belgeler/<Seri No>.json' },
     { key: 'model', label: 'Makine Modeli', ph: 'ULT M200 3B' },
     { key: 'musteri', label: 'Alıcı Firma', ph: 'Firma adı' },
-    { key: 'belgeNo', label: 'Belge No', ph: 'GB-2026-001' },
     { section: 'Teslim ve Fatura' },
     { key: 'teslimTarihi', label: 'Teslim Tarihi', type: 'date', half: true },
     { key: 'teslimYeri', label: 'Teslim Yeri', ph: 'Ankara', half: true },
-    { key: 'faturaTarihi', label: 'Fatura Tarihi', type: 'date', half: true },
-    { key: 'faturaNo', label: 'Fatura No', half: true },
-    { section: 'Garanti', hint: 'Boşsa ayarlardaki değer' },
-    { key: 'garantiYil', label: 'Süre (yıl)', type: 'number', half: true, ph: () => state.ayarlar.garantiYil },
-    { key: 'garantiSaat', label: 'Çalışma saati', type: 'number', half: true, ph: () => state.ayarlar.garantiSaat },
+    { key: 'faturaTarihi', label: 'Fatura Tarihi', type: 'date', help: 'Garanti süresi bu tarihten başlar' },
     { section: 'Satıcı Firma' },
     { key: 'satici.ayni', label: 'Satıcı, imalatçı firma ile aynı', type: 'switch' },
     { key: 'satici.unvan', label: 'Unvanı', seller: true },
     { key: 'satici.adres', label: 'Adresi', type: 'textarea', seller: true },
     { key: 'satici.telefon', label: 'Telefon', half: true, seller: true },
     { key: 'satici.faks', label: 'Faks', half: true, seller: true },
-    { key: 'satici.eposta', label: 'E-posta', seller: true },
-    { section: 'İç not', hint: 'Belgeye basılmaz' },
-    { key: 'not', type: 'textarea', ph: 'Örn. teslimatta eğitim verildi' }
+    { key: 'satici.eposta', label: 'E-posta', seller: true }
   ];
 
   function alanHtml(f, belge) {
@@ -889,15 +878,14 @@
       { key: 'urunCinsi.en', label: 'Cinsi (EN)' },
       { key: 'urunCinsi.de', label: 'Cinsi (DE)' }
     ] },
-    { card: 'Garanti Varsayılanları', hint: 'Belgede boş bırakılırsa bunlar kullanılır; şart metnine de bu değerler yazılır', cols: 4, fields: [
+    { card: 'Garanti', hint: 'Her garanti belgesine ve şart metnine bu değerler yazılır', cols: 4, fields: [
       { key: 'garantiYil', label: 'Garanti süresi (yıl)', type: 'number' },
       { key: 'garantiSaat', label: 'Çalışma saati', type: 'number' },
       { key: 'yedekParcaYil', label: 'Yedek parça temini (yıl)', type: 'number' },
       { key: 'kullanimOmruYil', label: 'Kullanım ömrü (yıl)', type: 'number' }
     ] },
-    { card: 'Belge', hint: 'Bakanlık onayı ve numaralandırma', cols: 2, fields: [
-      { key: 'onayTarihiSayisi', label: 'Belge onay tarihi ve sayısı (eski Bakanlık onayı; boşsa belgede elle doldurma çizgisi kalır)' },
-      { key: 'belgeNoOnek', label: 'Belge no öneki (GB → GB-2026-001; programın verdiği iç numara)' }
+    { card: 'Belge', hint: 'Bakanlık onayı', cols: 1, fields: [
+      { key: 'onayTarihiSayisi', label: 'Belge onay tarihi ve sayısı (eski Bakanlık onayı; boşsa belgede elle doldurma çizgisi kalır)' }
     ] }
   ];
 

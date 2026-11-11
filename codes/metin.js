@@ -64,7 +64,6 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
       model: 'Makine Modeli',
       teslim: 'Teslim Tarihi',
       alici: 'Alıcı Firma',
-      belgeNo: 'Belge No',
       sure: 'Garanti Süresi',
       saklayin: 'Garantiden yararlanmak için bu belgeyi saklayınız.'
     },
@@ -102,7 +101,7 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
       sure: 'Garanti Süresi',
       teslimTarihi: 'Teslim Tarihi',
       teslimYeri: 'Teslim Yeri',
-      fatura: 'Fatura Tarihi ve No',
+      fatura: 'Fatura Tarihi',
       alici: 'Alıcı',
       kase: 'Kaşe / İmza',
       tarih: 'Tarih'
@@ -171,7 +170,6 @@ The customer is entitled to a full replacement of the product, a refund or a pri
       model: 'Machine Model',
       teslim: 'Delivery Date',
       alici: 'Buyer Company',
-      belgeNo: 'Certificate No',
       sure: 'Warranty Period',
       saklayin: 'Keep this certificate to claim under the warranty.'
     },
@@ -209,7 +207,7 @@ The customer is entitled to a full replacement of the product, a refund or a pri
       sure: 'Warranty Period',
       teslimTarihi: 'Delivery Date',
       teslimYeri: 'Place of Delivery',
-      fatura: 'Invoice Date and No',
+      fatura: 'Invoice Date',
       alici: 'Buyer',
       kase: 'Stamp / Signature',
       tarih: 'Date'
@@ -279,7 +277,6 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
       model: 'Maschinenmodell',
       teslim: 'Lieferdatum',
       alici: 'Käuferfirma',
-      belgeNo: 'Zertifikat-Nr.',
       sure: 'Garantiezeit',
       saklayin: 'Bewahren Sie dieses Zertifikat auf, um die Garantie in Anspruch zu nehmen.'
     },
@@ -317,7 +314,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
       sure: 'Garantiezeit',
       teslimTarihi: 'Lieferdatum',
       teslimYeri: 'Lieferort',
-      fatura: 'Rechnungsdatum und -nummer',
+      fatura: 'Rechnungsdatum',
       alici: 'Käufer',
       kase: 'Stempel / Unterschrift',
       tarih: 'Datum'

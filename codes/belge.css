@@ -52,9 +52,6 @@
 .wx-cv-bant .wx-b-head { margin-top: auto; }
 
 .wx-cover .wx-cv-logo { display: block; width: 250px; height: 89px; object-fit: contain; object-position: left center; flex-shrink: 0; }
-.wx-cover .wx-cv-no { text-align: right; white-space: nowrap; }
-.wx-cover .wx-cv-no span { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); }
-.wx-cover .wx-cv-no b { display: block; margin-top: 3px; font-size: 16px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink); }
 .wx-cover .wx-cv-kicker { font-size: 14px; font-weight: 700; letter-spacing: 0.16em; color: var(--acc); }
 .wx-cover .wx-cv-title { margin-top: 14px; font-weight: 800; line-height: 1.02; letter-spacing: -0.01em; color: var(--ink); overflow-wrap: anywhere; }
 .wx-cover .wx-cv-rule { margin-top: 26px; width: 96px; height: 7px; background: var(--acc); }
@@ -153,9 +150,6 @@
 .wx-cert-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 9px; border-bottom: 3px solid var(--acc); }
 .wx-cert-kicker { font-family: 'Segoe UI', sans-serif; font-size: 7.6pt; font-weight: 600; letter-spacing: 0.15em; color: var(--gray); }
 .wx-cert-title { margin-top: 2px; font-size: 25pt; font-weight: 700; line-height: 1.05; letter-spacing: 0.5px; color: var(--acc); }
-.wx-cert-no { text-align: right; white-space: nowrap; }
-.wx-cert-no span { display: block; font-size: 8pt; letter-spacing: 0.05em; color: var(--gray); }
-.wx-cert-no b { display: block; font-size: 14pt; font-weight: 700; color: var(--ink); }
 .wx-cert-approval { display: flex; align-items: baseline; gap: 8px; font-size: 10pt; }
 .wx-cert-approval span:first-child { color: var(--gray); }
 .wx-cert-approval-v { font-weight: 700; }
