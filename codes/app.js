@@ -119,7 +119,8 @@
   function scriptYukle(src) {
     return new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = src;
+      // Yayında sürüm eklenir: yeni sürümde eski dosya önbellekten gelmez
+      s.src = WxBoot.VERSION.surum ? `${src}?v=${WxBoot.VERSION.surum}` : src;
       s.onload = resolve;
       s.onerror = () => reject(new Error(`${src} yüklenemedi. "npm run gomulu" ile yeniden üretin.`));
       document.head.appendChild(s);
@@ -945,7 +946,22 @@
   const REPO_NEW_URL = 'https://github.com/new?name=warrantyx-veri&visibility=private&description=WarrantyX%20garanti%20belgeleri';
   const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new?name=WarrantyX%20veri&description=WarrantyX%20veri%20deposu&contents=write&expires_in=365';
 
+  /** Yayında depo sabittir, yalnız anahtar sorulur. Anahtarı programı yöneten kişi verir. */
+  function yayinBaglantiHtml() {
+    return `
+      <h2>Erişim anahtarı</h2>
+      <p>Garanti belgeleri özel <strong>${esc(WxBoot.DEFAULT_REPO)}</strong> deposunda durur. Programı kullanmak için size verilen erişim anahtarını yapıştırıp <strong>Bağlan</strong> deyin. Anahtar yalnız bu tarayıcıda saklanır; bu bilgisayarda bir kez girmeniz yeterlidir.</p>
+      <form class="connect-form" data-connect>
+        <div class="field"><label>Erişim anahtarı</label><input class="field-input" name="token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></div>
+        <div class="actions"><button type="submit" class="btn btn-primary">Bağlan</button></div>
+      </form>
+      <div class="result" data-connect-result role="status"></div>
+      <div class="note">Ortak kullanılan bir bilgisayarda işiniz bitince Veritabanı sekmesinden <strong>Bağlantıyı kaldır</strong> deyin.<br>
+        Yönetici için: <a href="${TOKEN_URL}" target="_blank" rel="noopener">yeni anahtar oluşturun</a>, "Repository access" altında <strong>Only select repositories</strong> seçip yalnız <strong>warrantyx-veri</strong> deposunu işaretleyin. <strong>Contents: Read and write</strong> hazır gelir. Her kişiye ayrı anahtar verin: biri ayrılınca yalnız onunki silinir.</div>`;
+  }
+
   function baglantiHtml(isSetup) {
+    if (WxBoot.PUBLISHED) return yayinBaglantiHtml();
     const s = WxBoot.settings();
     const repo = s.mode === 'github' && s.repo ? s.repo : WxBoot.DEFAULT_REPO;
     return `
@@ -977,10 +993,10 @@
     };
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const repo = form.elements.repo.value.trim();
+      const repo = form.elements.repo ? form.elements.repo.value.trim() : WxBoot.DEFAULT_REPO;
       const token = form.elements.token.value.trim();
       if (!repo || !token) {
-        say('Depo adı ve erişim anahtarı gerekli.', 'err');
+        say(form.elements.repo ? 'Depo adı ve erişim anahtarı gerekli.' : 'Erişim anahtarı gerekli.', 'err');
         return;
       }
       say('Deneniyor…');
@@ -1009,13 +1025,17 @@
     $('dbMode').textContent = github ? 'GitHub' : 'Yerel mod';
     $('dbSync').hidden = !github;
     $('dbDisconnect').hidden = !github;
-    $('dbShowConnect').textContent = github ? 'Depoyu ya da anahtarı değiştir' : 'GitHub deposuna bağla';
+    $('dbShowConnect').textContent = WxBoot.PUBLISHED ? 'Anahtarı değiştir' : github ? 'Depoyu ya da anahtarı değiştir' : 'GitHub deposuna bağla';
     const rows = await state.db.list();
     const size = rows.reduce((n, r) => n + (r.bytes ? r.bytes.length : 0), 0);
     const st = state.db.status();
     const where = github ? `GitHub deposu: <b>${esc(s.repo)}</b>` : '<b>Yerel mod</b>: veriler yalnız bu tarayıcıda';
     const status = github ? WxBoot.statusText(st).text : '';
-    $('dbInfo').innerHTML = `${where}<br>${state.belgeler.length} garanti belgesi · ${rows.length} dosya · ${(size / 1024).toFixed(1)} KB${status ? ` · ${esc(status)}` : ''}`;
+    const v = WxBoot.VERSION;
+    const program = WxBoot.PUBLISHED
+      ? `Program: yayındaki sürüm <b>${esc(v.surum)}</b>${v.tarih ? ` · ${esc(zamanYaz(v.tarih))}` : ''}`
+      : 'Program: bu bilgisayardaki kopya (dosyadan açıldı)';
+    $('dbInfo').innerHTML = `${where}<br>${state.belgeler.length} garanti belgesi · ${rows.length} dosya · ${(size / 1024).toFixed(1)} KB${status ? ` · ${esc(status)}` : ''}<br>${program}`;
   }
 
   function veritabaniOlaylari() {
@@ -1041,7 +1061,10 @@
       }
     });
     $('dbDisconnect').addEventListener('click', async () => {
-      const ok = await onayla('Bağlantıyı kaldır', 'Erişim anahtarı bu tarayıcıdan silinir, belgeler bu bilgisayarda kalır ve yerel modda çalışmaya devam edilir. Önce eşitlemek isterseniz "Şimdi eşitle" deyin.', 'Bağlantıyı kaldır');
+      const text = WxBoot.PUBLISHED
+        ? 'Erişim anahtarı bu tarayıcıdan silinir ve program yeniden anahtar ister. Depoya gönderilmemiş değişiklik varsa bu bilgisayarda bekler, yeniden bağlanınca gönderilir. Önce eşitlemek isterseniz "Şimdi eşitle" deyin.'
+        : 'Erişim anahtarı bu tarayıcıdan silinir, belgeler bu bilgisayarda kalır ve yerel modda çalışmaya devam edilir. Önce eşitlemek isterseniz "Şimdi eşitle" deyin.';
+      const ok = await onayla('Bağlantıyı kaldır', text, 'Bağlantıyı kaldır');
       if (!ok) return;
       WxBoot.disconnect();
       location.reload();
@@ -1139,9 +1162,23 @@
     veritabaniOlaylari();
   }
 
+  /** Kayıt bu cihaza yazıldıktan sonra yenilenir; depoya gönderilmemişse sonraki açılışta gider */
+  function yeniSurumBandi(latest) {
+    const el = $('wxSurum');
+    const when = latest.tarih ? zamanYaz(latest.tarih) : '';
+    el.innerHTML = `<div>Programın yeni sürümü yayında.<small>${esc(latest.surum)}${when ? ` · ${esc(when)}` : ''} · yenileyince açılır</small></div>
+      <button type="button" class="btn btn-sm btn-primary">Yenile</button>`;
+    el.hidden = false;
+    el.querySelector('button').addEventListener('click', async () => {
+      await kaydetSimdi();
+      location.reload();
+    });
+  }
+
   async function basla() {
     const s = WxBoot.settings();
-    if (!s.mode) {
+    // Yayında yerel mod yoktur: anahtarı olmayan program açamaz
+    if (!s.mode || (WxBoot.PUBLISHED && s.mode !== 'github')) {
       ekran('setup');
       $('setupConnect').innerHTML = baglantiHtml(true);
       baglantiOlaylari($('setupConnect'));
@@ -1162,6 +1199,7 @@
     state.ready = true;
     window.addEventListener('hashchange', route);
     route();
+    WxBoot.watchVersion(yeniSurumBandi);
   }
 
   // Test ve geliştirme için: tarayıcı konsolundan ya da otomatik denemeden erişilir

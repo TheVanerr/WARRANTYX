@@ -1,7 +1,9 @@
 /* WarrantyX açılışı: veritabanı bağlantısı. P&PX'in ppx-boot.js düzenini izler.
    Veritabanı özel bir GitHub deposudur (warrantyx-veri). Her kayıt önce bu cihazın tarayıcı veritabanına
    (IndexedDB) yazılır, sonra en geç 1 dakikada bir tek commit olarak depoya gönderilir.
-   Bağlantı ayarı ve erişim anahtarı yalnız bu tarayıcıda (localStorage) durur. */
+   Bağlantı ayarı ve erişim anahtarı yalnız bu tarayıcıda (localStorage) durur.
+   Yayındaki sürüm (GitHub Pages) index.html'de sürüm damgası taşır (tools/yayin-hazirla.js basar). Yayında
+   program yalnız warrantyx-veri deposuna erişimi olan anahtarla açılır: yerel mod ve depo seçimi yoktur. */
 
 (function () {
   'use strict';
@@ -12,6 +14,14 @@
   const FOREGROUND_SYNC_MS = 5 * 60 * 1000;
   const FOCUS_SYNC_GAP_MS = 60 * 1000;
   const FIRST_SYNC_WAIT_MS = 3000;
+  const VERSION_CHECK_MS = 5 * 60 * 1000;
+
+  const versionMeta = document.querySelector('meta[name="wx-surum"]');
+  const VERSION = {
+    surum: (versionMeta && versionMeta.content) || '',
+    tarih: (versionMeta && versionMeta.dataset.tarih) || ''
+  };
+  const PUBLISHED = !!VERSION.surum;
 
   const README = {
     message: 'WarrantyX veri deposu',
@@ -115,16 +125,42 @@
     return db;
   }
 
-  /** Depoyu dener; müşteri verisi açık depoya yazılmasın diye yalnız özel depo kabul edilir */
+  /** Depoyu dener; müşteri verisi açık depoya yazılmasın diye yalnız özel depo kabul edilir.
+      Yayında depo sabittir: anahtar bu depoya erişemiyorsa program açılmaz. */
   async function connectGitHub(repo, token) {
-    const remote = remoteFor(repo, token);
+    const remote = remoteFor(PUBLISHED ? DEFAULT_REPO : repo, token);
     const info = await remote.info();
     if (!info.private) throw new Error('Bu depo herkese açık. Müşteri verileri için özel (Private) depo gerekir.');
     saveSettings({ mode: 'github', repo: remote.id, token });
   }
 
+  /** Yayında program açıkken yeni sürüm çıkarsa onNew bir kez çağrılır */
+  function watchVersion(onNew) {
+    if (!PUBLISHED) return;
+    let last = 0;
+    let found = false;
+    const check = async () => {
+      if (found || document.visibilityState !== 'visible' || Date.now() - last < FOCUS_SYNC_GAP_MS) return;
+      last = Date.now();
+      try {
+        const res = await fetch(`surum.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const latest = await res.json();
+        if (latest.surum && latest.surum !== VERSION.surum) {
+          found = true;
+          onNew(latest);
+        }
+      } catch { /* çevrimdışı: sonraki denemede bakılır */ }
+    };
+    document.addEventListener('visibilitychange', check);
+    setInterval(check, VERSION_CHECK_MS);
+    check();
+  }
+
   window.WxBoot = {
     DEFAULT_REPO,
+    VERSION,
+    PUBLISHED,
     ready() {
       if (!readyPromise) readyPromise = connect();
       return readyPromise;
@@ -133,8 +169,9 @@
     settings,
     statusText,
     connectGitHub,
+    watchVersion,
     useLocal: () => saveSettings({ mode: 'yerel' }),
-    /** Anahtar silinir, veriler bu cihazda kalır */
-    disconnect: () => saveSettings({ mode: 'yerel' })
+    /** Anahtar silinir, veriler bu cihazda kalır. Yayında program yeniden anahtar ister. */
+    disconnect: () => saveSettings(PUBLISHED ? {} : { mode: 'yerel' })
   };
 })();

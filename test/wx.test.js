@@ -204,3 +204,43 @@ test('JPEG görsel DCTDecode ile olduğu gibi gömülür', async () => {
   assert.ok(Buffer.from(bytes).includes(Buffer.from(jpeg)), 'JPEG baytları değişmeden PDF içinde');
   assert.match(text, /\/XObject << \/I0 \d+ 0 R >>/, 'görsel sayfa kaynaklarında');
 });
+
+/* ─── Yayın: GitHub Pages sitesi ─────────────────────────── */
+
+test('yayın sitesi damgalanır ve programın istediği her dosya sitede bulunur', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { hazirla } = require('../tools/yayin-hazirla.js');
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'wx-site-'));
+  try {
+    const r = hazirla(out, { surum: 'abc1234', tarih: '2026-11-11T09:00:00.000Z' });
+    const html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+    assert.ok(html.includes('<meta name="wx-surum" content="abc1234" data-tarih="2026-11-11T09:00:00.000Z">'));
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out, 'surum.json'), 'utf8')), { surum: 'abc1234', tarih: '2026-11-11T09:00:00.000Z' });
+
+    // index.html'deki her yerel script ve stil sürümlü adresle gelir ve dosyası sitededir
+    const yerel = [...html.matchAll(/(?:src|href)="((?:codes|ortak|assets)\/[^"]+)"/g)].map((m) => m[1]);
+    assert.ok(yerel.length >= 12, `yalnız ${yerel.length} yerel adres bulundu`);
+    for (const url of yerel) {
+      const [file, query] = url.split('?');
+      if (/\.(js|css)$/.test(file)) assert.equal(query, 'v=abc1234', `${file} sürümsüz`);
+      assert.ok(fs.existsSync(path.join(out, file)), `${file} sitede yok`);
+    }
+    assert.equal(r.dosyalar.length, yerel.filter((u) => /\.(js|css)\?/.test(u)).length);
+
+    // Sonradan yüklenen yazı tipi dosyası da sitededir; eski dosyalar, testler ve araçlar yayınlanmaz
+    assert.ok(fs.existsSync(path.join(out, 'assets/gomulu-yazitipi.js')));
+    for (const gizli of ['_eski', 'test', 'tools', 'package.json', 'README.md']) assert.ok(!fs.existsSync(path.join(out, gizli)), `${gizli} yayınlanmamalı`);
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('yayın hazırlayıcı proje klasörünü silmez', () => {
+  const path = require('node:path');
+  const { hazirla } = require('../tools/yayin-hazirla.js');
+  const root = path.join(__dirname, '..');
+  assert.throws(() => hazirla(root, { surum: 'x' }), /proje klasörünü içeriyor/);
+  assert.throws(() => hazirla(path.dirname(root), { surum: 'x' }), /proje klasörünü içeriyor/);
+});

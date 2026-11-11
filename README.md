@@ -4,7 +4,27 @@ Dolfin endüstriyel parça yıkama makineleri için garanti belgesi programı. B
 
 ## Başlatma
 
-`index.html` dosyasını **Chrome veya Edge** ile açın (çift tık). Sunucu ya da yayın adresi yoktur.
+Program iki yoldan açılır, ikisi de aynı `warrantyx-veri` deposuna bağlanır:
+
+- **Yayındaki adres:** <https://thevanerr.github.io/WARRANTYX/> (Chrome veya Edge). Kurulum gerekmez, her zaman son sürüm açılır. Program yalnız `warrantyx-veri` deposuna erişimi olan bir erişim anahtarıyla açılır. Anahtar bu bilgisayarda bir kez girilir. Yerel mod ve depo seçimi yoktur.
+- **Dosyadan:** `index.html` dosyasına çift tıklanır. Geliştirme ve internetsiz deneme içindir. Bu yolda yerel mod ve depo seçimi vardır.
+
+### Yayın ve güncelleme
+
+`main` dalına her gönderimde `.github/workflows/yayin.yml` testleri çalıştırır. Testler geçerse program 1-2 dakika içinde yayına çıkar. Test geçmezse yayın olmaz ve kullananlar önceki sürümle devam eder.
+
+- Yeni açılan program son sürümle gelir. Her dosyanın adresinde sürüm vardır, bu yüzden tarayıcı önbellekten eski dosya getirmez.
+- Açık kalan programın sağ altında "Programın yeni sürümü yayında · Yenile" çıkar. Yenilemeden önce açık belge bu bilgisayara kaydedilir.
+- Açık sürüm Veritabanı sekmesinde yazar (`Program: yayındaki sürüm 1a2b3c4`).
+- Siteye yalnız `index.html`, `codes/`, `ortak/` ve `assets/` gider. `_eski/`, `test/` ve `tools/` gitmez. Yerelde denemek için: `node tools/yayin-hazirla.js _site`.
+
+Bir kez yapılacak ayar: depo **Settings → General → Change visibility → Public**, sonra **Settings → Pages → Source: GitHub Actions**. Ücretsiz hesapta Pages yalnız açık depodan yayınlanır. Kod açık olur ama belgeler açılmaz: belgeler özel `warrantyx-veri` deposunda durur ve anahtar olmadan okunamaz.
+
+### Başka kullanıcıya anahtar verme
+
+Her kişiye ayrı anahtar oluşturun (adı örneğin `WarrantyX - Ahmet`). Her anahtar yalnız `warrantyx-veri` deposuna, *Contents: Read and write* izniyle verilir. Biri ayrılınca GitHub → Settings → Personal access tokens altından yalnız onun anahtarı silinir, diğerleri çalışmaya devam eder. Ortak kullanılan bilgisayarda iş bitince Veritabanı sekmesinden **Bağlantıyı kaldır** denir.
+
+### İlk kurulum (dosyadan)
 
 İlk açılışta ekrandaki üç adımı izleyin (yaklaşık 3 dakika):
 
@@ -16,7 +36,7 @@ Depo boşsa sorun değildir: program bağlanınca `README.md` yazar, ilk garanti
 
 GitHub'a bağlanmadan denemek için **Şimdilik yalnız bu bilgisayarda kullan** seçilir. Sonradan Veritabanı sekmesinden bağlanınca yapılanlar depoya gönderilir.
 
-Başka bir bilgisayarda: program klasörünü kopyalayın, `index.html` dosyasını açın, aynı depo ve anahtarla bağlanın. Belgeler kendiliğinden gelir.
+Başka bir bilgisayarda yayındaki adresi açıp anahtarı girmek yeterlidir, belgeler kendiliğinden gelir. Program klasörünü kopyalamak gerekmez.
 
 ## Kullanım
 
@@ -76,13 +96,16 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 | `ortak/` | Veritabanı (`ppx-db.js`) ve GitHub bağlantısı (`ppx-github.js`) P&PX'ten; açılış ve bağlantı (`wx-boot.js`) |
 | `assets/` | Dolfin logosu, yazı tipleri (OFL lisanslı) ve gömülü kopyaları |
 | `tools/gomulu-uret.js` | `assets/gomulu-*.js` üreticisi |
+| `tools/yayin-hazirla.js` | Yayın sitesini hazırlar: dosyaları kopyalar, sürüm damgası ve `surum.json` yazar |
+| `.github/workflows/yayin.yml` | `main` dalına gönderimde test ve GitHub Pages yayını |
 | `test/` | Birim ve veritabanı testleri (sahte GitHub ile) |
 | `_eski/` | Önceki garanti dosyaları; içerikleri bir dosya kaymış, eşleşme `_eski/OKU.md` içinde |
 | `P&PX/` | Arayüz ve yapı için başvuru alınan P&PX programı (kendi deposu var) |
 
 ## Sınırlar
 
-- **Erişim anahtarı** yalnız bu tarayıcıda saklanır, ancak bilgisayarda açtığınız başka bir yerel HTML dosyası da onu okuyabilir. Bu yüzden anahtar yalnız `warrantyx-veri` deposuna izinli olmalıdır; bilinmeyen HTML dosyalarını bu tarayıcıda açmayın. Süresi dolunca Veritabanı sekmesinden yenilenir.
+- **Erişim anahtarı** yalnız bu tarayıcıda saklanır. Dosyadan açılan programda bilgisayardaki başka bir yerel HTML dosyası da onu okuyabilir. Yayındaki programda anahtarı yalnız `thevanerr.github.io` altındaki sayfalar okuyabilir, yani sizin diğer yayındaki araçlarınız. Bu yüzden anahtar yalnız `warrantyx-veri` deposuna izinli olmalıdır. Süresi dolunca Veritabanı sekmesinden yenilenir.
+- **Yayındaki kod açıktır:** Program dosyaları ve garanti şartlarının metni herkesçe görülebilir. Bu metin zaten her belgede basılıdır. Müşteri, makine ve belge bilgileri yalnız özel depodadır.
 - **Özel depo zorunlu:** Herkese açık depoya bağlanılmaz, çünkü müşteri verisi içerir.
 - **Yasal metin:** Türkçe metin ve onay sayısı eski garanti belgesinden olduğu gibi alındı. Metin 4077 sayılı Kanun'a ve Sanayi ve Ticaret Bakanlığı'na atıf yapıyor; bu kanun 2014'te 6502 sayılı Tüketicinin Korunması Hakkında Kanun ile değişti. Güncellenmesi gerekiyorsa `codes/metin.js` içinde değiştirilir.
 
@@ -92,4 +115,4 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 npm test
 ```
 
-Kayıt modeli, üç dilin metin yapısı, boş `warrantyx-veri` deposuna ilk yazma, iki bilgisayar arası eşitleme ve PDF'e JPEG gömme denenir.
+Kayıt modeli, üç dilin metin yapısı, boş `warrantyx-veri` deposuna ilk yazma, iki bilgisayar arası eşitleme, PDF'e JPEG gömme ve yayın sitesinin hazırlanması (sürüm damgası, her dosyanın sitede olması) denenir.

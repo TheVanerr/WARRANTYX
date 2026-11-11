@@ -241,6 +241,15 @@ input[type=date].field-input::-webkit-calendar-picker-indicator { filter: invert
 /* Düzenleyicide durum üst çubukta yazar */
 body.in-editor .wx-chip { display: none; }
 
+/* Yayında yeni sürüm çıkınca: kayıt bu cihazda olduğundan yenilemek güvenlidir */
+.wx-surum {
+  position: fixed; right: 12px; bottom: 12px; z-index: 60; max-width: 420px;
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--dolfin); border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); font-size: 12.5px; line-height: 1.4;
+}
+.wx-surum small { display: block; color: var(--muted); font-size: 11px; }
+
 /* ── Ölçme ve PDF: sayfalar görünmeyen bir yerde dizilir ── */
 #measureRoot, #printRoot { position: fixed; left: -30000px; top: 0; pointer-events: none; }
 #printRoot { display: none; }
