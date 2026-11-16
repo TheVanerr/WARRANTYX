@@ -20,6 +20,11 @@
       "name": "Yeni Garanti Belgesi",
       "url": "./#/yeni",
       "icons": [{ "src": "assets/simge/simge-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Yeni CE Belgesi",
+      "url": "./#/ce-yeni",
+      "icons": [{ "src": "assets/simge/simge-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

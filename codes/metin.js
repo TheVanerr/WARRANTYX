@@ -1,4 +1,4 @@
-/* Belge metinleri: TR, EN, DE.
+/* Belge metinleri: garanti belgesi TR, EN, DE; CE uygunluk beyanı EN, DE (dosyanın sonunda).
    Garanti şartları sade Markdown'dır; sayfalara bölme belge.js'te kendiliğinden yapılır.
      # Başlık   ## Ara başlık   > Vurgulu kutu   * Madde   **kalın**   {{yer tutucu}}
    Yer tutucular ayarlardaki garanti süresi, çalışma saati, yedek parça ve kullanım ömrüyle dolar.
@@ -335,6 +335,197 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
 
   const dil = (id) => DILLER[id] || TR;
 
+  /* ─── CE uygunluk beyanı: EN, DE ──────────────────────────
+     Metin taranmış CE belgelerinden harfi harfine alındı; yazım da olduğu gibi kaldı.
+     Üst bilgi, standart açıklamaları ve beyan belgedeki satırlarıyla yazılır: dizinin her öğesi bir satır.
+     Satırlar kendiliğinden bölünmez, belgenin yapısı yazı tipinden bağımsız aynı kalır. Bir cümle
+     değişirse satır sonları da elle düzenlenir (sağ kenar: en uzun satır kadar). */
+
+  const CE_EN = {
+    kod: 'EN',
+    ad: 'English',
+    // PDF dosya adındaki dil etiketi: eski dosyalardaki gibi (EN), (DEU)
+    dosyaEtiketi: 'EN',
+    ust: [
+      ['Regulation (EC) No:765/2008 of the European parliament and of', 'the council setting out the requirements for accreditation and', 'market surveillance relating to the marketing of products'],
+      ['EN ISO/IEC 17050-1:2010 | Conformity assessment-Supplier’s', 'declaration of conformity']
+    ],
+    baslik: 'EC Declaration of Conformity',
+    imalatciEtiket: 'NAME OF MANUFACTURER',
+    firma: 'C.N.K ELEKTRONİK MAKİNE SANAYİ A.Ş.',
+    adres: '1. ORGANİZE SANAYİ BÖLGESİ ORHAN IŞIK BULVARI NO:1 ANKARA / TÜRKİYE',
+    web: 'https://www.dolfin.info.tr/en  - dolfin@dolfintr.com',
+    urunAdi: 'Product name',
+    tipModel: 'Type / Model',
+    seriNo: 'Serial Number',
+    imalYili: 'Year of manufacture',
+    marka: 'Brand',
+    raporlar: 'Test Reports',
+    lvd: 'LVD-',
+    risk: 'RISK ASSESMENT REPORT',
+    kriterBaslik: 'Criteria',
+    kriterler: [
+      ['2006/42/EC', 'Machinery Directive'],
+      ['2014/35/EU', 'Low Voltage Equipment Directive'],
+      ['2014/30/EU', 'Electromagnetic Compatibility Directive']
+    ],
+    standartlar: [
+      {
+        kod: 'EN 60204-1:2018',
+        ad: 'Safety of machinery - Electrical equipment of machines',
+        metin: [
+          'EN 60204-1:2018 specifies the safety requirements for the electrical equipment of machines. The standard covers the fundamental principles related to',
+          'the design, installation, and verification of electrical, electronic, and programmable electronic equipment used in machinery. Its objective is to reduce',
+          'electrical hazards, ensure the protection of personnel, and provide safe and reliable operation of machines. EN 60204-1:2018 addresses requirements',
+          'related to electric shock protection, short-circuit protection, overcurrent protection, earthing, control circuits, emergency stop functions, and marking,',
+          'and is widely referenced for machinery used in industrial environments.'
+        ]
+      },
+      {
+        kod: 'EN ISO 12100:2010',
+        ad: 'Safety of machinery - General principles for design - Risk assessment and risk reduction',
+        metin: [
+          'EN ISO 12100:2010 specifies the general principles for machine safety, including risk assessment and risk reduction methods to be applied during',
+          'machine design. The standard aims to ensure that hazards associated with machinery throughout its entire life cycle—including transport, installation,',
+          'operation, maintenance, and decommissioning—are systematically identified and that the resulting risks are reduced to acceptable levels. EN ISO',
+          '12100:2010 is based on a three-step risk reduction hierarchy, consisting of inherently safe design measures, technical protective measures, and',
+          'information for use, and is recognized as a key reference standard within machinery safety legislation.'
+        ]
+      },
+      {
+        kod: 'EN ISO 13849-1:2023',
+        ad: 'Safety of machinery - Safety-related parts of control systems',
+        metin: [
+          'EN ISO 13849-1:2023 specifies the general principles and requirements for the design of safety-related parts of control systems (SRP/CS) for machinery.',
+          'The standard applies to safety functions implemented by electrical, electronic, programmable electronic, hydraulic, and pneumatic control systems. Its',
+          'objective is to ensure that the safety-related parts of control systems achieve a sufficient level of reliability in relation to the identified risks.'
+        ]
+      },
+      {
+        kod: 'EN IEC 61000-6-2:2019',
+        ad: 'Electromagnetic compatibility (EMC) - Part 6-2 - Immunity standard for industrial environments',
+        metin: [
+          'This standard specifies the Electromagnetic Compatibility (EMC) immunity requirements applicable to electrical and electronic equipment intended for',
+          'use in industrial environments. The immunity requirements defined within the frequency range from 0 Hz to 400 GHz fall within the scope of this',
+          'standard. No testing is required for frequencies for which no requirements are specified in the standard.'
+        ]
+      },
+      {
+        kod: 'EN IEC 61000-6-4:2019',
+        ad: 'Electromagnetic Compatibility (EMC) - Part 6-4 - Emission Standard for Industrial Environments',
+        metin: [
+          'These requirements cover the electromagnetic emission requirements applicable to electrical and electronic equipment designed for use in industrial',
+          'environments.'
+        ]
+      }
+    ],
+    beyan: [
+      'By means of this declaration, I hereby declare that the identified products fully',
+      'comply with the criteria, essential requirements, and applicable provisions',
+      'specified in the relevant legislation, standards, and directives currently in force.'
+    ],
+    // İmza satırı parçaları: [metin, kalın mı, büyük mü]
+    imzalayan: [['Fatih GÜRAL', true, true], [' – Quality Kontrol Supervisor of C.N.K ELEKTRONİK MAKİNE SANAYİ AŞ | Signature:', false, false]],
+    tarihEtiket: 'Issue Date:',
+    alt: 'Document Revision Number / Date: 01 / 15.12.2025 | Document Code: CNK52022161002'
+  };
+
+  const CE_DE = {
+    kod: 'DE',
+    ad: 'Deutsch',
+    dosyaEtiketi: 'DEU',
+    ust: [
+      ['Verordnung (EG) Nr. 765/2008 des Europäischen Parlaments und des', 'Rates: Diese Verordnung legt die Anforderungen an die Akkreditierung', 'sowie an die Marktüberwachung im Zusammenhang mit der', 'Vermarktung von Produkten fest.'],
+      ['EN ISO/IEC 17050-1:2010 – Konformitätsbewertung –', 'Konformitätserklärung von Lieferanten: Diese Norm beschreibt die', 'allgemeinen Anforderungen und Grundsätze für die Ausstellung einer', 'Konformitätserklärung durch den Hersteller bzw. Lieferanten.']
+    ],
+    baslik: 'EG-Konformitätserklärung',
+    imalatciEtiket: 'NAME DES HERSTELLERS',
+    firma: 'C.N.K ELEKTRONİK MAKİNE SANAYİ A.Ş.',
+    adres: '1. ORGANİZE SANAYİ BÖLGESİ ORHAN IŞIK BULVARI NO:1 ANKARA / TÜRKİYE',
+    web: 'https://www.dolfin.info.tr/en  - dolfin@dolfintr.com',
+    urunAdi: 'Produktname',
+    tipModel: 'Typ / Modell',
+    seriNo: 'Seriennummer',
+    imalYili: 'Baujahr',
+    marka: 'Marke',
+    raporlar: 'Prüfberichte',
+    lvd: 'LVD-',
+    risk: 'RISIKOBEURTEILUNGSBERICHT',
+    kriterBaslik: 'Kriterien',
+    kriterler: [
+      ['2006/42/EC', 'Maschinenrichtlinie'],
+      ['2014/35/EU', 'Niederspannungsrichtlinie'],
+      ['2014/30/EU', 'Richtlinie über die elektromagnetische Verträglichkeit (EMV)']
+    ],
+    standartlar: [
+      {
+        kod: 'EN 60204-1:2018',
+        ad: 'Sicherheit von Maschinen – Elektrische Ausrüstung von Maschinen',
+        metin: [
+          'Die Norm EN 60204-1:2018 legt die Sicherheitsanforderungen für die elektrische Ausrüstung von Maschinen fest. Sie umfasst grundlegende Prinzipien',
+          'für die Konstruktion, Installation und Verifizierung elektrischer, elektronischer sowie programmierbarer elektronischer Ausrüstungen von Maschinen.',
+          'Ziel der Norm ist es, elektrische Gefährdungen zu reduzieren, den Schutz von Personen sicherzustellen und einen sicheren sowie zuverlässigen Betrieb',
+          'von Maschinen zu gewährleisten. Die Norm behandelt unter anderem Anforderungen hinsichtlich Schutzes gegen elektrischen Schlag, Kurzschluss-',
+          'und Überstromschutz, Erdung, Steuerstromkreise, Not-Halt-Funktionen sowie Kennzeichnung und wird häufig für Maschinen in industriellen',
+          'Umgebungen angewendet.'
+        ]
+      },
+      {
+        kod: 'EN ISO 12100:2010',
+        ad: 'Sicherheit von Maschinen – Allgemeine Gestaltungsleitsätze – Risikobeurteilung und Risikominderung',
+        metin: [
+          'Die Norm EN ISO 12100:2010 legt allgemeine Grundsätze für die Maschinensicherheit fest, einschließlich Verfahren zur Risikobeurteilung und',
+          'Risikominderung während der Konstruktion. Ziel ist es, Gefährdungen über den gesamten Lebenszyklus der Maschine hinweg – einschließlich',
+          'Transport, Installation, Betrieb, Wartung und Außerbetriebnahme – systematisch zu identifizieren und die daraus resultierenden Risiken auf ein',
+          'akzeptables Maß zu reduzieren.'
+        ]
+      },
+      {
+        kod: 'EN ISO 13849-1:2023',
+        ad: 'Sicherheit von Maschinen – Sicherheitsbezogene Teile von Steuerungen',
+        metin: [
+          'Die Norm EN ISO 13849-1:2023 legt allgemeine Grundsätze und Anforderungen für die Gestaltung sicherheitsbezogener Teile von Steuerungssystemen',
+          '(SRP/CS) fest. Sie gilt für Sicherheitsfunktionen, die durch elektrische, elektronische, programmierbare elektronische sowie hydraulische und',
+          'pneumatische Steuerungen realisiert werden. Ziel der Norm ist es, sicherzustellen, dass die sicherheitsbezogenen Teile von Steuerungssystemen ein',
+          'dem Risiko angemessenes Zuverlässigkeitsniveau erreichen.'
+        ]
+      },
+      {
+        kod: 'EN IEC 61000-6-2:2019',
+        ad: 'Elektromagnetische Verträglichkeit (EMV) – Teil 6-2: Störfestigkeit für industrielle Umgebungen',
+        metin: [
+          'Diese Norm legt die Anforderungen an die elektromagnetische Störfestigkeit für elektrische und elektronische Geräte fest, die für den Einsatz in',
+          'industriellen Umgebungen bestimmt sind. Die festgelegten Anforderungen gelten für einen Frequenzbereich von 0 Hz bis 400 GHz. Für',
+          'Frequenzbereiche, für die keine spezifischen Anforderungen definiert sind, sind keine Prüfungen erforderlich.'
+        ]
+      },
+      {
+        kod: 'EN IEC 61000-6-4:2019',
+        ad: 'Elektromagnetische Verträglichkeit (EMV) – Teil 6-4: Störaussendung für industrielle Umgebungen',
+        metin: [
+          'Diese Norm legt die Anforderungen an die elektromagnetische Störaussendung für elektrische und elektronische Geräte fest, die für den Einsatz in',
+          'industriellen Umgebungen ausgelegt sind. Ziel ist es, sicherzustellen, dass die von Geräten verursachten elektromagnetischen Emissionen andere',
+          'Systeme nicht beeinträchtigen.'
+        ]
+      }
+    ],
+    beyan: [
+      'Mit dieser Erklärung erkläre ich hiermit, dass die identifizierten Produkte den',
+      'Kriterien, den grundlegenden Anforderungen sowie den anwendbaren',
+      'Bestimmungen der geltenden Rechtsvorschriften, Normen und Richtlinien',
+      'vollständig entsprechen.'
+    ],
+    imzalayan: [['Fatih GÜRAL', true, true], [' - ', false, false], ['Qualitätskontrollleiter', true, false], [' bei C.N.K ELEKTRONİK MAKİNE SANAYİ AŞ | Unterschrift:', false, false]],
+    tarihEtiket: 'Ausstellungsdatum:',
+    alt: 'Dokument-Überarbeitungsnummer / Datum: 01 / 15.12.2025 | Dokumentencode: CNK52022161002'
+  };
+
+  const CE = { en: CE_EN, de: CE_DE };
+  const CE_DIL_SIRASI = [['en', 'EN', 'English'], ['de', 'DE', 'Deutsch']];
+  /** PDF dosya adındaki belge adı (eski dosyalardaki "CE COMFORMITY", yazımı düzeltildi) */
+  const CE_DOSYA_ADI = 'CE CONFORMITY';
+  const ceDil = (id) => CE[id] || CE_EN;
+
   /* ─── Metin → bloklar ─────────────────────────────────── */
 
   const esc = (v) => String(v == null ? '' : v)
@@ -407,5 +598,5 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
     return bloklar(doldur(t.sartlar, t.yer(etkin)));
   }
 
-  return { DILLER, DIL_SIRASI, dil, esc, satir, doldur, bloklar, sartBloklari };
+  return { DILLER, DIL_SIRASI, dil, esc, satir, doldur, bloklar, sartBloklari, CE, CE_DIL_SIRASI, CE_DOSYA_ADI, ceDil };
 });

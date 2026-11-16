@@ -1,7 +1,8 @@
-/* WarrantyX kayıtları: garanti belgesi ve ayarlar.
-   Depoda düz JSON dosyası olarak durur: belgeler/<Seri No>.json ve ayarlar.json.
+/* WarrantyX kayıtları: garanti belgesi, CE uygunluk beyanı, imzalar ve ayarlar.
+   Depoda düz dosya olarak durur: belgeler/<Seri No>.json, ce/<Seri No>.json, imzalar/<ad>.png ve ayarlar.json.
    Belge yalnız makineye özgü bilgiyi tutar. Garanti süresi ve çalışma saati her belgede ayarlardan gelir
    (1 yıl veya 2500 saat); kapak ve satıcı boş bırakılırsa ayarlardan gelir.
+   CE belgesi imzasının adını taşır: oluşturulurken rastgele seçilir, bir önceki CE belgesinin imzası gelmez.
    Bu dosya tarayıcıya bağlı değildir; Node testleri aynı kodu çalıştırır. */
 
 (function (root, factory) {
@@ -144,6 +145,152 @@
     };
   }
 
+  /* ─── CE uygunluk beyanı ──────────────────────────────── */
+
+  const CE_DIR = 'ce';
+  const CE_DILLER = ['en', 'de'];
+  /* İmzalar programın açık deposunda değil, özel veri deposunda durur: imzalar/<ad>.png.
+     Belge imzanın adını taşır (ör. "imza-07"). */
+  const IMZA_DIR = 'imzalar';
+  const IMZA_ADI = /^[A-Za-z0-9._-]{1,80}$/;
+
+  /** Taranmış CE belgesindeki ürün bilgileri: yeni CE belgesine gelir, sol menüden değişir */
+  const CE_VARSAYILAN = Object.freeze({
+    model: 'LYM 1350 NS',
+    urunAdi: Object.freeze({ en: 'TURN TABLE PARTS WASHERS ™', de: 'Drehteller-Unterlegscheiben ™' }),
+    marka: 'Dolfin®',
+    lvdRapor: '62024041.001',
+    riskRapor: 'RA62024041001'
+  });
+
+  function ceNormalize(raw) {
+    const src = raw && typeof raw === 'object' ? raw : {};
+    const ad = src.urunAdi && typeof src.urunAdi === 'object' ? src.urunAdi : {};
+    const d = CE_VARSAYILAN;
+    // Yazılmamış alan varsayılanla gelir; silinen alan boş kalır
+    const pick = (key) => (src[key] === undefined ? d[key] : clean(src[key]));
+    const imza = clean(src.imza);
+    return {
+      surum: 1,
+      seriNo: clean(src.seriNo),
+      musteri: clean(src.musteri),
+      model: pick('model'),
+      imalYili: clean(src.imalYili),
+      tarih: isoDate(src.tarih),
+      urunAdi: Object.fromEntries(CE_DILLER.map((l) => [l, ad[l] === undefined ? d.urunAdi[l] : clean(ad[l])])),
+      marka: pick('marka'),
+      lvdRapor: pick('lvdRapor'),
+      riskRapor: pick('riskRapor'),
+      dil: CE_DILLER.includes(src.dil) ? src.dil : 'en',
+      imza: IMZA_ADI.test(imza) ? imza : '',
+      olusturma: clean(src.olusturma),
+      guncelleme: clean(src.guncelleme)
+    };
+  }
+
+  /** Yeni CE belgesi: tarih bugün, imal yılı bu yıl; seri no ve imza oluştururken gelir */
+  function bosCe(now) {
+    const d = now ? new Date(now) : new Date();
+    return ceNormalize({ tarih: bugun(d), imalYili: String(d.getFullYear()) });
+  }
+
+  /* ─── CE imzası: rastgele, bir önceki CE belgesindekinden farklı ── */
+
+  /**
+   * Oluşturma sırasına göre komşu CE belgeleri.
+   * @param olusturma verilmezse en son oluşturulan "önceki" olur (yeni belge için)
+   * @param haric bu yoldaki belge sayılmaz (açık belgenin kendisi)
+   */
+  function ceKomsular(belgeler, olusturma, haricYol) {
+    let onceki = null;
+    let sonraki = null;
+    const t = clean(olusturma);
+    for (const item of belgeler || []) {
+      const b = item && item.belge ? item.belge : item;
+      if (!b || (haricYol && item.path === haricYol)) continue;
+      const o = clean(b.olusturma);
+      if (!t || o < t) {
+        if (!onceki || o > clean(onceki.olusturma)) onceki = b;
+      } else if (o > t && (!sonraki || o < clean(sonraki.olusturma))) {
+        sonraki = b;
+      }
+    }
+    return { onceki, sonraki };
+  }
+
+  /**
+   * Rastgele imza. Önce hariç tutulanların hepsi dışarıda kalır; seçenek kalmazsa sondan başlayarak
+   * birer birer serbest bırakılır (en önemlisi, bir önceki belgenin imzası, en son); tek imza varsa o gelir.
+   * @param adlar mevcut imzalar @param haric verilmeyecek imzalar, en önemlisi başta @param rnd [0,1) üreteci
+   * @returns imza adı; hiç imza yoksa boş
+   */
+  function imzaSec(adlar, haric, rnd) {
+    const r = rnd || Math.random;
+    const hepsi = [...new Set((adlar || []).filter((a) => IMZA_ADI.test(a)))].sort();
+    if (!hepsi.length) return '';
+    const h = haric || [];
+    for (let n = h.length; n >= 0; n -= 1) {
+      const disari = h.slice(0, n).filter(Boolean);
+      const secenek = hepsi.filter((a) => !disari.includes(a));
+      if (secenek.length) return secenek[Math.min(secenek.length - 1, Math.floor(r() * secenek.length))];
+    }
+    return hepsi[0];
+  }
+
+  /** Yeni CE belgesinin imzası: en son oluşturulan CE belgesindeki imza gelmez */
+  function yeniCeImzasi(belgeler, adlar, rnd) {
+    const { onceki } = ceKomsular(belgeler, '');
+    return imzaSec(adlar, [onceki && onceki.imza], rnd);
+  }
+
+  /** Belgenin imzasını değiştirir: kendi imzası, bir önceki ve bir sonraki CE belgesinin imzası gelmez */
+  function baskaCeImzasi(belge, belgeler, adlar, rnd, haricYol) {
+    const { onceki, sonraki } = ceKomsular(belgeler, belge.olusturma, haricYol);
+    return imzaSec(adlar, [onceki && onceki.imza, sonraki && sonraki.imza, belge.imza], rnd);
+  }
+
+  const imzaYolu = (ad) => `${IMZA_DIR}/${ad}.png`;
+  const imzaYoluMu = (path) => new RegExp(`^${IMZA_DIR}/[A-Za-z0-9._-]{1,80}\\.png$`).test(path);
+  const imzaAdi = (path) => String(path).slice(IMZA_DIR.length + 1).replace(/\.png$/, '');
+
+  /** Yüklenen dosyanın adından imza adı: "İmza 07.PNG" → "imza-07" */
+  function imzaAdiTemizle(dosya) {
+    const ad = clean(dosya)
+      .replace(/\.[^.]*$/, '')
+      .toLocaleLowerCase('tr')
+      .replace(/[çğıöşü]/g, (c) => ({ ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' })[c])
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/^[-.]+|[-.]+$/g, '')
+      .slice(0, 60);
+    return ad || 'imza';
+  }
+
+  /**
+   * PNG başlığı: genişlik, yükseklik ve çözünürlük (pHYs, yoksa 300 dpi: tarama çözünürlüğü).
+   * @returns { w, h, dpi } ya da PNG değilse null
+   */
+  function pngBilgi(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const IMZA = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (b.length < 33 || IMZA.some((v, i) => b[i] !== v)) return null;
+    const u32 = (at) => ((b[at] << 24) >>> 0) + (b[at + 1] << 16) + (b[at + 2] << 8) + b[at + 3];
+    const tip = (at) => String.fromCharCode(b[at], b[at + 1], b[at + 2], b[at + 3]);
+    if (tip(12) !== 'IHDR') return null;
+    const out = { w: u32(16), h: u32(20), dpi: 300 };
+    if (!out.w || !out.h) return null;
+    for (let at = 8; at + 8 <= b.length;) {
+      const len = u32(at);
+      const t = tip(at + 4);
+      if (t === 'pHYs' && len >= 9 && b[at + 16] === 1) {
+        const dpi = Math.round(u32(at + 8) * 0.0254);
+        if (dpi >= 72 && dpi <= 2400) out.dpi = dpi;
+      }
+      if (t === 'IDAT' || t === 'IEND') break;
+      at += 12 + len;
+    }
+    return out;
+  }
+
   /* ─── Depo yolları ────────────────────────────────────── */
 
   /** Seri no dosya adı olur: Windows ve Git'te sorun çıkaran karakterler atılır */
@@ -170,13 +317,25 @@
   /** Çakışma kopyaları (.catisma-…) ve alt klasörler belge sayılmaz */
   const belgeYoluMu = (path) => new RegExp(`^${BELGE_DIR}/[^/]+\\.json$`).test(path);
 
+  const ceYolu = (seri) => `${CE_DIR}/${dosyaAdi(seri)}.json`;
+  const ceYoluMu = (path) => new RegExp(`^${CE_DIR}/[^/]+\\.json$`).test(path);
+
+  const dosyaAdiTemizle = (name) => `${name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\s+/g, ' ').trim()}.pdf`;
+
   /** "0626051-DÜNYA-ULT M200 3B GARANTİ BELGESİ TR-EN.pdf" */
   function pdfDosyaAdi(belge, baslik, diller) {
     const b = belgeNormalize(belge);
     const parts = [b.seriNo, b.musteri, b.model].filter(Boolean);
     const tag = diller && diller.length > 1 ? ` ${diller.map((l) => l.toUpperCase()).join('-')}` : '';
-    const name = `${parts.join('-')}${parts.length ? ' ' : ''}${baslik}${tag}`;
-    return `${name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\s+/g, ' ').trim()}.pdf`;
+    return dosyaAdiTemizle(`${parts.join('-')}${parts.length ? ' ' : ''}${baslik}${tag}`);
+  }
+
+  /** "0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf": eski CE dosyalarının adı gibi */
+  function cePdfDosyaAdi(belge, baslik, etiketler) {
+    const b = ceNormalize(belge);
+    const parts = [b.seriNo, b.musteri, b.model].filter(Boolean);
+    const tag = etiketler && etiketler.length ? ` (${etiketler.join('-')})` : '';
+    return dosyaAdiTemizle(`${parts.join('-')}${parts.length ? ' ' : ''}${baslik}${tag}`);
   }
 
   /* ─── Dosya içeriği ───────────────────────────────────── */
@@ -189,22 +348,40 @@
 
   return {
     BELGE_DIR,
+    CE_DIR,
+    IMZA_DIR,
     AYARLAR_YOLU,
     DILLER,
+    CE_DILLER,
     KAPAKLAR,
     BOLUMLER,
     VARSAYILAN_AYARLAR,
+    CE_VARSAYILAN,
     bugun,
     tarihYaz,
     ayarlariNormalize,
     bosBelge,
     belgeNormalize,
     etkin,
+    bosCe,
+    ceNormalize,
+    ceKomsular,
+    imzaSec,
+    yeniCeImzasi,
+    baskaCeImzasi,
+    imzaYolu,
+    imzaYoluMu,
+    imzaAdi,
+    imzaAdiTemizle,
+    pngBilgi,
     dosyaAdi,
     seriHatasi,
     belgeYolu,
     belgeYoluMu,
+    ceYolu,
+    ceYoluMu,
     pdfDosyaAdi,
+    cePdfDosyaAdi,
     encode,
     decode
   };

@@ -1,6 +1,8 @@
-/* WarrantyX arayüzü: belge listesi, düzenleyici, ayarlar, veritabanı ve PDF.
+/* WarrantyX arayüzü: garanti belgeleri, CE belgeleri, düzenleyici, ayarlar, veritabanı ve PDF.
    Her değişiklik önce bu cihazın tarayıcı veritabanına yazılır (wx-boot.js), depo eşitlemesi arka planda yürür.
-   Ekranlar adres çubuğundan seçilir: #/ belgeler, #/ayarlar, #/veritabani, #/belge/<Seri No>. */
+   Ekranlar adres çubuğundan seçilir: #/ garanti belgeleri, #/ce CE belgeleri, #/ayarlar, #/veritabani,
+   #/belge/<Seri No> garanti belgesi, #/ce/<Seri No> CE belgesi.
+   CE belgesinin imzası veritabanındaki imzalar/ klasöründen rastgele gelir (özel depo; program deposu açıktır). */
 
 (() => {
   'use strict';
@@ -26,6 +28,10 @@
     ayarlar: K.ayarlariNormalize(null),
     ayarlarVar: false,
     belgeler: [],
+    ceBelgeler: [],
+    /** imza adı → { ad, path, hash, b64, src, w, h, dpi } */
+    imzalar: new Map(),
+    /** { tur: 'garanti' | 'ce', path, belge } */
     acik: null,
     acikDirty: false,
     saveTimer: null,
@@ -33,9 +39,36 @@
     previewTimer: null,
     zoom: null,
     pdfLangs: null,
+    cePdfLangs: null,
     pdfBusy: false,
     tab: 'belgeler'
   };
+
+  /** Belge türleri: liste, depo yolu, kayıt biçimi ve adres */
+  const TUR = {
+    garanti: {
+      ad: 'garanti belgesi',
+      liste: () => state.belgeler,
+      yaz: (list) => { state.belgeler = list; },
+      yol: K.belgeYolu,
+      normalize: K.belgeNormalize,
+      hash: (seri) => `#/belge/${encodeURIComponent(seri)}`,
+      listeHash: '#/',
+      diller: () => WxMetin.DIL_SIRASI
+    },
+    ce: {
+      ad: 'CE belgesi',
+      liste: () => state.ceBelgeler,
+      yaz: (list) => { state.ceBelgeler = list; },
+      yol: K.ceYolu,
+      normalize: K.ceNormalize,
+      hash: (seri) => `#/ce/${encodeURIComponent(seri)}`,
+      listeHash: '#/ce',
+      diller: () => WxMetin.CE_DIL_SIRASI
+    }
+  };
+  const turOf = (path) => (K.ceYoluMu(path) ? 'ce' : 'garanti');
+  const imzaAdlari = () => [...state.imzalar.keys()];
 
   /* ─── Küçük yardımcılar ──────────────────────────────── */
 
@@ -58,7 +91,7 @@
 
   const clone = (v) => JSON.parse(JSON.stringify(v));
   const nowIso = () => new Date().toISOString();
-  const belgeHash = (seri) => `#/belge/${encodeURIComponent(seri)}`;
+  const belgeHash = (seri) => TUR.garanti.hash(seri);
 
   function zamanYaz(iso) {
     if (!iso) return '';
@@ -76,8 +109,8 @@
     return `${esc(text.slice(0, i))}<mark>${esc(text.slice(i, i + q.length))}</mark>${esc(text.slice(i + q.length))}`;
   }
 
-  function langSeg(current, attr) {
-    return WxMetin.DIL_SIRASI.map(([id, code, name]) =>
+  function langSeg(current, attr, sira) {
+    return (sira || WxMetin.DIL_SIRASI).map(([id, code, name]) =>
       `<button type="button" ${attr}="${id}" title="${name}" class="${id === current ? 'active' : ''}" aria-pressed="${id === current}">${code}</button>`).join('');
   }
 
@@ -186,18 +219,47 @@
 
   /* ─── Veri ───────────────────────────────────────────── */
 
+  const sirala = (list) => list.sort((a, b) => (b.belge.guncelleme || '').localeCompare(a.belge.guncelleme || '') || a.belge.seriNo.localeCompare(b.belge.seriNo, 'tr'));
+
+  /** Garanti ve CE belgeleri, imzalar: tek geçişte */
   async function belgeleriOku() {
-    const list = [];
+    const garanti = [];
+    const ce = [];
+    const imza = [];
     for (const r of await state.db.list()) {
-      if (r.kind !== 'file' || !K.belgeYoluMu(r.path)) continue;
+      if (r.kind !== 'file') continue;
+      const tur = K.belgeYoluMu(r.path) ? 'garanti' : K.ceYoluMu(r.path) ? 'ce' : null;
+      if (!tur) {
+        if (K.imzaYoluMu(r.path)) imza.push(r);
+        continue;
+      }
       try {
-        list.push({ path: r.path, belge: K.belgeNormalize(K.decode(r.bytes)) });
+        (tur === 'ce' ? ce : garanti).push({ path: r.path, belge: TUR[tur].normalize(K.decode(r.bytes)) });
       } catch (e) {
         console.warn('Belge okunamadı:', r.path, e);
       }
     }
-    list.sort((a, b) => (b.belge.guncelleme || '').localeCompare(a.belge.guncelleme || '') || a.belge.seriNo.localeCompare(b.belge.seriNo, 'tr'));
-    state.belgeler = list;
+    state.belgeler = sirala(garanti);
+    state.ceBelgeler = sirala(ce);
+    imzalariKur(imza);
+  }
+
+  /** imzalar/<ad>.png kayıtları → görsel; değişmeyen imza yeniden kodlanmaz */
+  function imzalariKur(records) {
+    const yeni = new Map();
+    for (const r of records.slice().sort((a, b) => a.path.localeCompare(b.path))) {
+      const ad = K.imzaAdi(r.path);
+      const eski = state.imzalar.get(ad);
+      if (eski && eski.hash === r.hash) {
+        yeni.set(ad, eski);
+        continue;
+      }
+      const bilgi = K.pngBilgi(r.bytes);
+      if (!bilgi) continue;
+      const b64 = WxDb.bytesToBase64(r.bytes);
+      yeni.set(ad, Object.assign({ ad, path: r.path, hash: r.hash, b64, src: `data:image/png;base64,${b64}` }, bilgi));
+    }
+    state.imzalar = yeni;
   }
 
   async function ayarlariOku() {
@@ -217,14 +279,14 @@
   }
 
   async function belgeYaz(path, belge) {
-    const clean = K.belgeNormalize(belge);
+    const T = TUR[turOf(path)];
+    const clean = T.normalize(belge);
     await state.db.write(path, K.encode(clean));
-    const i = state.belgeler.findIndex((x) => x.path === path);
-    if (i >= 0) state.belgeler.splice(i, 1);
-    state.belgeler.unshift({ path, belge: clean });
+    T.yaz([{ path, belge: clean }, ...T.liste().filter((x) => x.path !== path)]);
   }
 
-  const belgeVar = (path) => state.belgeler.some((x) => x.path === path);
+  /** Belge yolu türünü taşır: belgeler/… garanti, ce/… CE belgesi */
+  const belgeVar = (path) => TUR[turOf(path)].liste().some((x) => x.path === path);
 
   /* ─── Ekranlar ve yönlendirme ────────────────────────── */
 
@@ -236,32 +298,52 @@
   async function route() {
     if (!state.ready) return;
     const h = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
-    if (h.startsWith('belge/')) {
+    if (h.startsWith('belge/') || h.startsWith('ce/')) {
       await kaydetSimdi();
-      editorAc(h.slice('belge/'.length));
+      const tur = h.startsWith('ce/') ? 'ce' : 'garanti';
+      editorAc(tur, h.slice(h.indexOf('/') + 1));
       return;
     }
     await kaydetSimdi();
     state.acik = null;
-    anaEkran(['ayarlar', 'veritabani'].includes(h) ? h : 'belgeler');
-    // Uygulama kısayolu (görev çubuğu simgesinde sağ tık): yeni belge penceresi açılır, adres belgelere döner
+    anaEkran(['ayarlar', 'veritabani', 'ce'].includes(h) ? h : h === 'ce-yeni' ? 'ce' : 'belgeler');
+    // Uygulama kısayolu (görev çubuğu simgesinde sağ tık): yeni belge penceresi açılır, adres listeye döner
     if (h === 'yeni') {
       history.replaceState(null, '', '#/');
       yeniBelgePenceresi(null);
+    } else if (h === 'ce-yeni') {
+      history.replaceState(null, '', '#/ce');
+      yeniCePenceresi(null);
     }
   }
 
   /* ─── Ana ekran ──────────────────────────────────────── */
+
+  const SEKME_BASLIK = {
+    garanti: ['Garanti Belgesi', 'WarrantyX · Endüstriyel parça yıkama makineleri · TR · EN · DE', '+ Yeni Garanti Belgesi'],
+    ce: ['CE Belgesi', 'WarrantyX · EC / EG uygunluk beyanı · EN · DE · rastgele imza', '+ Yeni CE Belgesi']
+  };
 
   function anaEkran(tab) {
     state.tab = tab;
     ekran('home');
     document.querySelectorAll('.home-tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     $('pageBelgeler').classList.toggle('hidden', tab !== 'belgeler');
+    $('pageCe').classList.toggle('hidden', tab !== 'ce');
     $('pageAyarlar').classList.toggle('hidden', tab !== 'ayarlar');
     $('pageVeritabani').classList.toggle('hidden', tab !== 'veritabani');
+    const [baslik, alt, yeni] = SEKME_BASLIK[tab === 'ce' ? 'ce' : 'garanti'];
+    $('homeTitle').textContent = baslik;
+    $('homeSub').textContent = alt;
+    $('btnNew').textContent = yeni;
+    document.title = `WarrantyX · Dolfin ${baslik}`;
+    $('ceCount').textContent = state.ceBelgeler.length ? String(state.ceBelgeler.length) : '';
     if (tab === 'belgeler') belgeListesi();
-    else if (tab === 'ayarlar') ayarFormu();
+    else if (tab === 'ce') {
+      ceListesi();
+      // Önizlemeler CE yazı tipleriyle yeniden çizilir (ilk açılışta yüklenir)
+      ceHazirla().then(() => { if (state.tab === 'ce' && !state.acik) ceListesi(); });
+    } else if (tab === 'ayarlar') ayarFormu();
     else veritabaniSayfasi();
   }
 
@@ -324,19 +406,110 @@
     scaleInto($('docEmpty').querySelector('.empty-thumb'), WxBelge.kapak(K.bosBelge(), state.ayarlar, 'tr'), 260);
   }
 
+  /* ─── CE belgeleri ───────────────────────────────────── */
+
+  function ceListesi() {
+    $('ceCount').textContent = state.ceBelgeler.length ? String(state.ceBelgeler.length) : '';
+    $('ceImzalar').textContent = state.imzalar.size ? `İmzalar (${state.imzalar.size})` : 'İmzalar';
+    $('ceUyari').innerHTML = state.imzalar.size ? '' : `
+      <div class="imza-uyari">
+        <div><b>İmzalar henüz yüklenmedi.</b> CE belgesine imza gelmesi için imza dosyalarını bir kez yükleyin
+          (proje klasöründeki <code>imzalar/</code>: 23 imza). İmzalar yalnız özel veri deposunda durur.</div>
+        <button type="button" class="btn btn-sm btn-primary" data-imzalar>İmzaları yükle</button>
+      </div>`;
+    const empty = !state.ceBelgeler.length;
+    $('ceList').classList.toggle('hidden', empty);
+    $('ceEmpty').classList.toggle('hidden', !empty);
+    $('ceSearch').classList.toggle('hidden', empty);
+    $('ceResult').classList.toggle('hidden', empty);
+    if (empty) {
+      ceBosEkran();
+      return;
+    }
+    const q = $('ceSearch').value.trim().toLocaleLowerCase('tr');
+    const hits = state.ceBelgeler.filter(({ belge: b }) =>
+      !q || [b.seriNo, b.model, b.musteri].some((v) => v.toLocaleLowerCase('tr').includes(q)));
+    $('ceResult').textContent = q ? `${hits.length} / ${state.ceBelgeler.length} belge` : `${state.ceBelgeler.length} belge`;
+    const list = $('ceList');
+    if (!hits.length) {
+      list.innerHTML = '<div class="empty-list">Aramaya uyan belge yok.</div>';
+      return;
+    }
+    list.replaceChildren(...hits.map(({ belge: b }) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'doc-card';
+      card.dataset.seri = b.seriNo;
+      const imzaYok = !b.imza || !state.imzalar.has(b.imza);
+      card.innerHTML = `
+        <div class="doc-thumb"></div>
+        <div class="doc-info">
+          <div class="dc-no">${vurgula(b.seriNo, q)}</div>
+          <div class="dc-model">${vurgula(b.model || '—', q)}</div>
+          <div class="dc-customer">${vurgula(b.musteri || 'Müşteri yazılmadı', q)}</div>
+          <div class="dc-chips">
+            <span class="dc-chip lang">${esc(b.dil.toUpperCase())}</span>
+            ${b.tarih ? `<span class="dc-chip">${esc(K.tarihYaz(b.tarih))}</span>` : ''}
+            ${imzaYok ? '<span class="dc-chip red">İmza yok</span>' : ''}
+          </div>
+          <div class="dc-meta">${b.guncelleme ? `Güncellendi ${esc(zamanYaz(b.guncelleme))}` : ''}</div>
+        </div>`;
+      scaleInto(card.querySelector('.doc-thumb'), WxCe.sayfa(b, b.dil, state.imzalar), 112);
+      return card;
+    }));
+  }
+
+  function ceBosEkran() {
+    $('ceEmpty').innerHTML = `
+      <div class="empty-hero">
+        <div>
+          <h2>Henüz CE belgesi yok</h2>
+          <p>Seri numarasını ve tarihi yazın; EC uygunluk beyanı İngilizce ya da Almanca, taranmış belgedeki düzeniyle hazırlanır. Ürün bilgileri (TURN TABLE PARTS WASHERS, LYM 1350 NS, test raporları) hazır gelir, sol menüden değişir.</p>
+          <p>Her yeni CE belgesine imzalardan biri rastgele gelir; bir önceki CE belgesindeki imza gelmez.</p>
+          <div class="actions"><button type="button" class="btn btn-primary" data-new>+ İlk CE belgesini oluştur</button></div>
+        </div>
+        <div class="empty-thumb"></div>
+      </div>`;
+    scaleInto($('ceEmpty').querySelector('.empty-thumb'), WxCe.sayfa(K.bosCe(), 'en', null), 260);
+  }
+
+  /* ─── CE yazı tipleri ekranda ────────────────────────────
+     Caladea ve Barlow bilgisayarda yüklü değildir: önizleme PDF'teki dosyalarla çizilir. */
+
+  let ceYazi = null;
+  function ceHazirla() {
+    if (!ceYazi) {
+      ceYazi = (async () => {
+        await yaziTipleri();
+        PidPdfDom.useOnScreen('Caladea');
+        PidPdfDom.useOnScreen('Barlow Semi Condensed');
+        await document.fonts.ready;
+      })().catch((e) => {
+        ceYazi = null;
+        toast(`CE yazı tipleri yüklenemedi: ${e.message}`, 'error');
+      });
+    }
+    return ceYazi;
+  }
+
   /* ─── Yeni belge ─────────────────────────────────────── */
 
-  function yeniBelgePenceresi(kaynak) {
+  /** @param dolum CE belgesinden gelinince { seriNo, model, musteri } */
+  function yeniBelgePenceresi(kaynak, dolum) {
     const base = kaynak ? clone(kaynak) : K.bosBelge();
+    const d = dolum || {};
+    if (!kaynak && dolum) Object.assign(base, { model: d.model || '', musteri: d.musteri || '' });
     let dil = base.dil || 'tr';
     const title = kaynak ? 'Benzer garanti belgesi' : 'Yeni garanti belgesi';
     const intro = kaynak
       ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri, teslim ve satıcı bilgileri kopyalanır. Fatura tarihi boş gelir.</p>`
-      : '<p>Diğer bilgileri belgeyi açınca tamamlayabilirsiniz.</p>';
+      : dolum
+        ? `<p>"${esc(d.seriNo)}" seri numaralı CE belgesinin model ve müşteri bilgisi geldi. Diğer bilgileri belgeyi açınca tamamlayabilirsiniz.</p>`
+        : '<p>Diğer bilgileri belgeyi açınca tamamlayabilirsiniz.</p>';
     pencere(`
       <h2>${title}</h2>
       ${intro}
-      <div class="field"><label for="nwSeri">Seri No</label><input id="nwSeri" class="field-input" name="seriNo" placeholder="0626051" maxlength="60"></div>
+      <div class="field"><label for="nwSeri">Seri No</label><input id="nwSeri" class="field-input" name="seriNo" placeholder="0626051" maxlength="60" value="${esc(d.seriNo || '')}"></div>
       <div class="field"><label for="nwModel">Makine Modeli</label><input id="nwModel" class="field-input" name="model" placeholder="ULT M200 3B" value="${esc(base.model)}"></div>
       <div class="field"><label for="nwMusteri">Alıcı Firma</label><input id="nwMusteri" class="field-input" name="musteri" placeholder="Firma adı" value="${esc(base.musteri)}"></div>
       <div class="field-row">
@@ -395,6 +568,82 @@
     });
   }
 
+  /**
+   * Yeni CE belgesi. İmza burada seçilir: rastgele, en son oluşturulan CE belgesindeki imza gelmez.
+   * @param kaynak benzer belge @param dolum garanti belgesinden gelinince { seriNo, model, musteri }
+   */
+  function yeniCePenceresi(kaynak, dolum) {
+    const base = kaynak ? clone(kaynak) : K.bosCe();
+    const d = dolum || {};
+    let dil = base.dil || 'en';
+    const title = kaynak ? 'Benzer CE belgesi' : 'Yeni CE belgesi';
+    const intro = kaynak
+      ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri ve ürün bilgileri kopyalanır. Tarih bugün olur, imza yeniden rastgele seçilir.</p>`
+      : dolum
+        ? `<p>"${esc(d.seriNo)}" seri numaralı garanti belgesinin model ve müşteri bilgisi geldi. Ürün bilgileri taranmış CE belgesindeki gibi gelir, belgeyi açınca sol menüden değişir.</p>`
+        : '<p>Ürün bilgileri taranmış CE belgesindeki gibi gelir (TURN TABLE PARTS WASHERS, test raporları); belgeyi açınca sol menüden değişir.</p>';
+    const imzaNotu = state.imzalar.size ? '' : '<div class="note" style="margin-top:0">Henüz imza yüklenmedi: belge şimdilik imzasız olur. CE Belgesi sekmesindeki <b>İmzalar</b> düğmesinden yükleyince belgeyi açtığınızda imza gelir.</div>';
+    pencere(`
+      <h2>${title}</h2>
+      ${intro}
+      <div class="field"><label for="nwSeri">Seri No</label><input id="nwSeri" class="field-input" name="seriNo" placeholder="0226089" maxlength="60" value="${esc(d.seriNo || '')}"></div>
+      <div class="field"><label for="nwModel">Makine Modeli</label><input id="nwModel" class="field-input" name="model" placeholder="LYM 1350 NS" value="${esc(d.model || base.model)}"></div>
+      <div class="field"><label for="nwMusteri">Alıcı Firma <small>belgede yazmaz, PDF dosya adında</small></label><input id="nwMusteri" class="field-input" name="musteri" placeholder="Firma adı" value="${esc(d.musteri || base.musteri)}"></div>
+      <div class="field-row">
+        <div class="field"><label for="nwTarih">Düzenleme Tarihi</label><input id="nwTarih" class="field-input" type="date" name="tarih" value="${esc(K.bugun())}"></div>
+        <div class="field"><span class="field-label">Belge dili</span><div class="lang-seg" id="nwLang">${langSeg(dil, 'data-lang', WxMetin.CE_DIL_SIRASI)}</div></div>
+      </div>
+      ${imzaNotu}
+      <div class="modal-error" id="nwError"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn btn-primary">Oluştur ve aç</button>
+      </div>`, {
+      onOpen: (form) => {
+        form.querySelector('#nwLang').addEventListener('click', (e) => {
+          const b = e.target.closest('[data-lang]');
+          if (!b) return;
+          dil = b.dataset.lang;
+          form.querySelector('#nwLang').innerHTML = langSeg(dil, 'data-lang', WxMetin.CE_DIL_SIRASI);
+        });
+      },
+      onSubmit: async (form) => {
+        const v = (name) => form.elements[name].value.trim();
+        const seri = v('seriNo');
+        let err = K.seriHatasi(seri);
+        if (!err && belgeVar(K.ceYolu(seri))) err = `"${seri}" seri numaralı CE belgesi zaten var.`;
+        if (!err && !v('model')) err = 'Makine modeli gerekli.';
+        if (err) {
+          form.querySelector('#nwError').textContent = err;
+          form.elements[err.startsWith('Makine') ? 'model' : 'seriNo'].focus();
+          return false;
+        }
+        const now = nowIso();
+        const belge = K.ceNormalize(Object.assign(base, {
+          seriNo: seri,
+          model: v('model'),
+          musteri: v('musteri'),
+          tarih: v('tarih'),
+          imalYili: String(new Date().getFullYear()),
+          dil,
+          imza: K.yeniCeImzasi(state.ceBelgeler, imzaAdlari()),
+          olusturma: now,
+          guncelleme: now
+        }));
+        try {
+          await belgeYaz(K.ceYolu(seri), belge);
+        } catch (e) {
+          form.querySelector('#nwError').textContent = `Kaydedilemedi: ${e.message}`;
+          return false;
+        }
+        state.db.sync();
+        location.hash = TUR.ce.hash(seri);
+        toast(`"${seri}" CE belgesi oluşturuldu${belge.imza ? ` · ${belge.imza}` : ' · imzasız'}.`);
+        return true;
+      }
+    });
+  }
+
   /* ─── Düzenleyici ────────────────────────────────────── */
 
   const FORM = [
@@ -415,6 +664,24 @@
     { key: 'satici.eposta', label: 'E-posta', seller: true }
   ];
 
+  /** CE belgesi: değişen alanlar. Ürün bilgileri taranmış belgedeki değerlerle gelir. */
+  const CE_FORM = [
+    { section: 'Makine' },
+    { key: 'seriNo', label: 'Seri No', ph: '0226089', help: 'Belgede "Serial Number / Seriennummer". Depoda dosya adı olur: ce/<Seri No>.json' },
+    { key: 'model', label: 'Makine Modeli', ph: 'LYM 1350 NS', help: 'Type / Model · Typ / Modell' },
+    { key: 'imalYili', label: 'İmal Yılı', ph: '2026', half: true },
+    { key: 'tarih', label: 'Düzenleme Tarihi', type: 'date', half: true },
+    { key: 'musteri', label: 'Alıcı Firma', ph: 'Firma adı', help: 'Belgede yazmaz; listede ve PDF dosya adında kullanılır' },
+    { section: 'Ürün bilgileri', hint: 'taranmış belgedeki değerlerle gelir' },
+    { key: 'urunAdi.en', label: 'Ürün Adı (EN)', ph: 'TURN TABLE PARTS WASHERS ™' },
+    { key: 'urunAdi.de', label: 'Ürün Adı (DE)', ph: 'Drehteller-Unterlegscheiben ™' },
+    { key: 'marka', label: 'Marka', ph: 'Dolfin®' },
+    { key: 'lvdRapor', label: 'LVD Test Raporu No', ph: '62024041.001' },
+    { key: 'riskRapor', label: 'Risk Değerlendirme Raporu No', ph: 'RA62024041001' }
+  ];
+
+  const acikForm = () => (state.acik && state.acik.tur === 'ce' ? CE_FORM : FORM);
+
   function alanHtml(f, belge) {
     const value = get(belge, f.key);
     const id = `ed-${f.key.replace('.', '-')}`;
@@ -433,15 +700,16 @@
 
   function editorFormu() {
     const belge = state.acik.belge;
+    const form = acikForm();
     const out = [];
-    for (let i = 0; i < FORM.length; i += 1) {
-      const f = FORM[i];
+    for (let i = 0; i < form.length; i += 1) {
+      const f = form[i];
       if (f.section) {
         out.push(`<div class="side-section">${esc(f.section)}${f.hint ? ` <small>${esc(f.hint)}</small>` : ''}</div>`);
         continue;
       }
-      if (f.half && FORM[i + 1] && FORM[i + 1].half) {
-        out.push(`<div class="field-row${f.seller ? ' seller-field' : ''}">${alanHtml(f, belge)}${alanHtml(FORM[i + 1], belge)}</div>`);
+      if (f.half && form[i + 1] && form[i + 1].half) {
+        out.push(`<div class="field-row${f.seller ? ' seller-field' : ''}">${alanHtml(f, belge)}${alanHtml(form[i + 1], belge)}</div>`);
         i += 1;
         continue;
       }
@@ -452,14 +720,16 @@
   }
 
   function saticiAlanlari() {
+    if (state.acik.tur !== 'garanti') return;
     const same = state.acik.belge.satici.ayni;
     $('edForm').querySelectorAll('.seller-field').forEach((el) => el.classList.toggle('hidden', same));
   }
 
   function editorBaslik() {
     const b = state.acik.belge;
-    $('edTitle').textContent = [b.seriNo, b.model].filter(Boolean).join(' · ');
-    document.title = `${b.seriNo} · WarrantyX`;
+    const ce = state.acik.tur === 'ce';
+    $('edTitle').textContent = [ce ? 'CE' : '', b.seriNo, b.model].filter(Boolean).join(' · ');
+    document.title = `${b.seriNo}${ce ? ' · CE' : ''} · WarrantyX`;
   }
 
   function kayitDurumu() {
@@ -476,29 +746,101 @@
   }
 
   function dilDugmeleri() {
-    $('edLang').innerHTML = langSeg(state.acik.belge.dil, 'data-doc-lang');
+    $('edLang').innerHTML = langSeg(state.acik.belge.dil, 'data-doc-lang', TUR[state.acik.tur].diller());
+  }
+
+  /** Aynı seri numaralı öbür belge (garanti ↔ CE) */
+  function karsiBelgeVar() {
+    const { tur, belge } = state.acik;
+    const hedef = tur === 'ce' ? 'garanti' : 'ce';
+    return !!belge.seriNo && belgeVar(TUR[hedef].yol(belge.seriNo));
   }
 
   function sagPanel() {
+    if (state.acik.tur === 'ce') {
+      ceSagPanel();
+      return;
+    }
     const b = state.acik.belge;
     $('edRight').innerHTML = `
       <div class="side-section">Belgedeki bölümler</div>
       ${K.BOLUMLER.map((k) => `
         <label class="switch-row${b.bolumler[k] ? ' is-on' : ''}"><span>${esc(BOLUM_ADLARI[k][0])}<br><small>${esc(BOLUM_ADLARI[k][1])}</small></span><input type="checkbox" data-bolum="${k}"${b.bolumler[k] ? ' checked' : ''}></label>`).join('')}
       <div class="side-section">Belge</div>
+      <button type="button" class="btn btn-sm" id="edKarsi">${karsiBelgeVar() ? 'Bu makinenin CE belgesini aç' : 'Bu makine için CE belgesi oluştur'}</button>
       <button type="button" class="btn btn-sm" id="edCopy">Benzer belge oluştur</button>
       <button type="button" class="btn btn-sm btn-danger" id="edDelete">Belgeyi sil</button>
       <span class="default-hint">${b.olusturma ? `Oluşturuldu ${esc(zamanYaz(b.olusturma))}` : ''}</span>`;
   }
 
-  function editorAc(seri) {
-    const item = state.belgeler.find((x) => x.path === K.belgeYolu(seri));
-    if (!item) {
-      toast(`"${seri}" seri numaralı belge bulunamadı.`, 'error');
-      location.hash = '#/';
+  /** CE belgesi: imza önizlemesi; imza değiştirilebilir, belge garanti belgesine bağlanır */
+  function ceSagPanel() {
+    const b = state.acik.belge;
+    const v = b.imza ? state.imzalar.get(b.imza) : null;
+    const n = state.imzalar.size;
+    const imza = v
+      ? `<div class="ce-imza-onizleme"><img src="${esc(v.src)}" alt="İmza ${esc(b.imza)}"></div>
+         <span class="default-hint">${esc(b.imza)} · ${n} imzadan rastgele seçildi. Bir önceki ve bir sonraki CE belgesindeki imza gelmez.</span>`
+      : `<div class="imza-yok">${b.imza ? `Bu belgenin imzası (${esc(b.imza)}) veritabanında artık yok.` : n ? 'Belgede imza yok.' : 'Henüz imza yüklenmedi: belge imzasız basılır.'}</div>`;
+    $('edRight').innerHTML = `
+      <div class="side-section">İmza</div>
+      ${imza}
+      <div class="side-actions">
+        ${n && (n > 1 || !v) ? '<button type="button" class="btn btn-sm" id="edImzaDegis" title="Rastgele başka imza; komşu CE belgelerindeki imzalar gelmez">Başka imza</button>' : ''}
+        <button type="button" class="btn btn-sm" id="edImzalar">İmzalar…</button>
+      </div>
+      <div class="side-section">Belge</div>
+      <button type="button" class="btn btn-sm" id="edKarsi">${karsiBelgeVar() ? 'Bu makinenin garanti belgesini aç' : 'Bu makine için garanti belgesi oluştur'}</button>
+      <button type="button" class="btn btn-sm" id="edCopy">Benzer CE belgesi oluştur</button>
+      <button type="button" class="btn btn-sm btn-danger" id="edDelete">Belgeyi sil</button>
+      <span class="default-hint">${b.olusturma ? `Oluşturuldu ${esc(zamanYaz(b.olusturma))}` : ''}</span>`;
+  }
+
+  /** İmzasız açılan CE belgesine imza gelir (imzalar belge oluşturulduktan sonra yüklendiyse) */
+  function imzaYoksaAta() {
+    const acik = state.acik;
+    // Silinen imza kendiliğinden değişmez: "Başka imza" ile seçilir
+    if (!acik || acik.tur !== 'ce' || acik.belge.imza || !state.imzalar.size) return false;
+    acik.belge.imza = K.baskaCeImzasi(acik.belge, state.ceBelgeler, imzaAdlari(), null, acik.path);
+    kayitPlanla();
+    return true;
+  }
+
+  function imzaDegistir() {
+    const acik = state.acik;
+    const yeni = K.baskaCeImzasi(acik.belge, state.ceBelgeler, imzaAdlari(), null, acik.path);
+    if (!yeni || yeni === acik.belge.imza) {
+      toast('Seçilecek başka imza yok.');
       return;
     }
-    state.acik = { path: item.path, belge: clone(item.belge) };
+    acik.belge.imza = yeni;
+    sagPanel();
+    onizle();
+    kayitPlanla();
+  }
+
+  async function karsiBelge() {
+    await kaydetSimdi();
+    const { tur, belge } = state.acik;
+    const hedef = tur === 'ce' ? 'garanti' : 'ce';
+    if (karsiBelgeVar()) {
+      location.hash = TUR[hedef].hash(belge.seriNo);
+      return;
+    }
+    const dolum = { seriNo: belge.seriNo, model: belge.model, musteri: belge.musteri };
+    if (hedef === 'ce') yeniCePenceresi(null, dolum);
+    else yeniBelgePenceresi(null, dolum);
+  }
+
+  function editorAc(tur, seri) {
+    const T = TUR[tur];
+    const item = T.liste().find((x) => x.path === T.yol(seri));
+    if (!item) {
+      toast(`"${seri}" seri numaralı ${T.ad} bulunamadı.`, 'error');
+      location.hash = T.listeHash;
+      return;
+    }
+    state.acik = { tur, path: item.path, belge: clone(item.belge) };
     state.acikDirty = false;
     ekran('editor');
     editorFormu();
@@ -508,6 +850,15 @@
     kayitDurumu();
     onizle();
     $('preview').scrollTop = 0;
+    if (tur === 'ce') {
+      const acik = state.acik;
+      ceHazirla().then(() => {
+        if (state.acik !== acik) return;
+        imzaYoksaAta();
+        sagPanel();
+        onizle();
+      });
+    }
   }
 
   /* ─── Önizleme ───────────────────────────────────────── */
@@ -538,7 +889,10 @@
     if (!state.acik) return;
     const host = $('measureRoot');
     host.replaceChildren();
-    const pages = WxBelge.olustur(host, state.acik.belge, state.ayarlar, state.acik.belge.dil);
+    const { tur, belge } = state.acik;
+    const pages = tur === 'ce'
+      ? WxCe.olustur(host, belge, belge.dil, state.imzalar)
+      : WxBelge.olustur(host, belge, state.ayarlar, belge.dil);
     let n = 0;
     const slots = pages.map((page) => {
       const slot = document.createElement('div');
@@ -588,12 +942,13 @@
 
   async function seriDegistir(input) {
     const acik = state.acik;
+    const T = TUR[acik.tur];
     const yeni = input.value.trim();
     const eski = acik.belge.seriNo;
     if (yeni === eski) return;
-    const newPath = K.belgeYolu(yeni);
+    const newPath = T.yol(yeni);
     let err = K.seriHatasi(yeni);
-    if (!err && newPath !== acik.path && belgeVar(newPath)) err = `"${yeni}" seri numaralı belge zaten var.`;
+    if (!err && newPath !== acik.path && belgeVar(newPath)) err = `"${yeni}" seri numaralı ${T.ad} zaten var.`;
     if (err) {
       toast(err, 'error');
       input.value = eski;
@@ -608,26 +963,29 @@
     await belgeYaz(newPath, acik.belge);
     if (oldPath !== newPath) {
       await state.db.remove(oldPath);
-      state.belgeler = state.belgeler.filter((x) => x.path !== oldPath);
+      T.yaz(T.liste().filter((x) => x.path !== oldPath));
     }
-    history.replaceState(null, '', belgeHash(yeni));
+    history.replaceState(null, '', T.hash(yeni));
     editorBaslik();
     kayitDurumu();
     onizle();
+    // Aynı seri numaralı öbür belgeye giden düğme yeni numaraya göre yazılır
+    sagPanel();
     toast(`Seri No "${yeni}" oldu.`);
   }
 
   async function belgeSil() {
-    const { path, belge } = state.acik;
+    const { tur, path, belge } = state.acik;
+    const T = TUR[tur];
     const github = WxBoot.settings().mode === 'github';
-    const ok = await onayla('Belgeyi sil', `"${belge.seriNo}" seri numaralı garanti belgesi silinsin mi? ${github ? 'Depodaki eski sürüm GitHub geçmişinde kalır.' : 'Yerel modda geri alınamaz; gerekirse önce yedek indirin.'}`, 'Sil');
+    const ok = await onayla('Belgeyi sil', `"${belge.seriNo}" seri numaralı ${T.ad} silinsin mi? ${github ? 'Depodaki eski sürüm GitHub geçmişinde kalır.' : 'Yerel modda geri alınamaz; gerekirse önce yedek indirin.'}`, 'Sil');
     if (!ok) return;
     clearTimeout(state.saveTimer);
     state.acikDirty = false;
     await state.db.remove(path);
-    state.belgeler = state.belgeler.filter((x) => x.path !== path);
+    T.yaz(T.liste().filter((x) => x.path !== path));
     state.acik = null;
-    location.hash = '#/';
+    location.hash = T.listeHash;
     toast(`"${belge.seriNo}" silindi.`);
   }
 
@@ -640,7 +998,7 @@
       if (key === 'seriNo') {
         // Seri No yazılırken değil, bitince uygulanır: dosya adı değişir
         const v = e.target.value.trim();
-        const p = K.belgeYolu(v);
+        const p = TUR[state.acik.tur].yol(v);
         e.target.classList.toggle('invalid', !!K.seriHatasi(v) || (p !== state.acik.path && belgeVar(p)));
         return;
       }
@@ -682,9 +1040,16 @@
       const id = e.target.id;
       if (id === 'edCopy') {
         await kaydetSimdi();
-        yeniBelgePenceresi(state.acik.belge);
+        if (state.acik.tur === 'ce') yeniCePenceresi(state.acik.belge);
+        else yeniBelgePenceresi(state.acik.belge);
       } else if (id === 'edDelete') {
         belgeSil();
+      } else if (id === 'edKarsi') {
+        karsiBelge();
+      } else if (id === 'edImzaDegis') {
+        imzaDegistir();
+      } else if (id === 'edImzalar') {
+        imzaPenceresi();
       }
     });
     $('edRight').addEventListener('change', (e) => {
@@ -739,19 +1104,32 @@
    * Belgeyi vektörel PDF'e çevirir. Her dil tam belge olarak TR, EN, DE sırasıyla arka arkaya eklenir.
    * @returns { bytes, pages, missing, failedImages, name }
    */
-  async function pdfOlustur(belge, langs, bolumler, onProgress) {
-    const order = WxMetin.DIL_SIRASI.map(([id]) => id).filter((id) => langs.includes(id));
+  /** Seçili diller belge türünün sırasıyla: garanti TR, EN, DE; CE EN, DE */
+  const dilSirasi = (tur, langs) => TUR[tur].diller().map(([id]) => id).filter((id) => langs.includes(id));
+
+  /** "0626051-DÜNYA-ULT M200 3B GARANTİ BELGESİ TR-EN.pdf", "0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf" */
+  function pdfAdi(tur, belge, order) {
+    if (tur === 'ce') return K.cePdfDosyaAdi(belge, WxMetin.CE_DOSYA_ADI, order.map((l) => WxMetin.ceDil(l).dosyaEtiketi));
+    return K.pdfDosyaAdi(belge, WxMetin.dil(order[0]).belgeAdi, order);
+  }
+
+  async function pdfOlustur(belge, langs, bolumler, onProgress, tur) {
+    const t = tur === 'ce' ? 'ce' : 'garanti';
+    const order = dilSirasi(t, langs);
     const root = $('printRoot');
     await yaziTipleri();
     PidPdfDom.begin();
     try {
       root.replaceChildren();
       await document.fonts.ready;
-      for (const lang of order) WxBelge.olustur(root, belge, state.ayarlar, lang, bolumler);
+      for (const lang of order) {
+        if (t === 'ce') WxCe.olustur(root, belge, lang, state.imzalar);
+        else WxBelge.olustur(root, belge, state.ayarlar, lang, bolumler);
+      }
       if (!root.children.length) throw new Error('Belgede basılacak bölüm yok');
       await imagesDecoded(root);
       await nextPaint();
-      const name = K.pdfDosyaAdi(belge, WxMetin.dil(order[0]).belgeAdi, order);
+      const name = pdfAdi(t, belge, order);
       const pdf = await PidPdfDom.render(root, { title: name.replace(/\.pdf$/, ''), producer: 'WarrantyX', onProgress });
       return Object.assign({ name }, pdf);
     } finally {
@@ -774,17 +1152,18 @@
   async function pdfIndir(langs, bolumler) {
     if (state.pdfBusy) return;
     state.pdfBusy = true;
+    const { tur } = state.acik;
     const belge = clone(state.acik.belge);
     try {
       await kaydetSimdi();
-      const order = WxMetin.DIL_SIRASI.map(([id]) => id).filter((id) => langs.includes(id));
-      const handle = await kayitYeri(K.pdfDosyaAdi(belge, WxMetin.dil(order[0]).belgeAdi, order));
+      const order = dilSirasi(tur, langs);
+      const handle = await kayitYeri(pdfAdi(tur, belge, order));
       if (handle === false) {
         toast('PDF kaydedilmedi.');
         return;
       }
       toast('PDF hazırlanıyor…');
-      const pdf = await pdfOlustur(belge, order, bolumler, (done, total) => toast(`PDF hazırlanıyor: ${done} / ${total} sayfa`));
+      const pdf = await pdfOlustur(belge, order, bolumler, (done, total) => toast(`PDF hazırlanıyor: ${done} / ${total} sayfa`), tur);
       let where = pdf.name;
       if (handle) {
         const w = await handle.createWritable();
@@ -806,8 +1185,55 @@
     }
   }
 
+  /** CE belgesi tek sayfadır: yalnız dil seçilir */
+  function cePdfPenceresi() {
+    const b = state.acik.belge;
+    const langs = new Set(state.cePdfLangs && state.cePdfLangs.length ? state.cePdfLangs : [b.dil]);
+    const order = () => dilSirasi('ce', [...langs]);
+    const name = () => (order().length ? pdfAdi('ce', b, order()) : '—');
+    const langRow = () => WxMetin.CE_DIL_SIRASI.map(([id, code, title]) =>
+      `<label class="pdf-lang${langs.has(id) ? ' is-on' : ''}" title="${title}"><input type="checkbox" data-pdf-lang="${id}"${langs.has(id) ? ' checked' : ''}>${code}</label>`).join('');
+    const imzasiz = !b.imza || !state.imzalar.has(b.imza);
+    pencere(`
+      <h2>PDF İndir</h2>
+      <p>CE uygunluk beyanı, vektörel PDF: yazılar seçilebilir ve aranabilir, yazı tipleri gömülüdür.</p>
+      <div class="pdf-langs"><span>Diller</span><span id="pdfLangs" style="display:flex;gap:6px;flex:none">${langRow()}</span></div>
+      <span class="default-hint">İki dil seçilirse EN ve DE sayfası tek dosyada arka arkaya gelir.</span>
+      ${imzasiz ? '<div class="imza-yok">Belgede imza yok: PDF imzasız olur.</div>' : ''}
+      <div class="pdf-name" id="pdfName">${esc(name())}</div>
+      <div class="modal-error" id="pdfError"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn btn-primary">PDF İndir</button>
+      </div>`, {
+      onOpen: (form) => {
+        form.addEventListener('change', (e) => {
+          const lang = e.target.dataset.pdfLang;
+          if (!lang) return;
+          if (e.target.checked) langs.add(lang);
+          else langs.delete(lang);
+          e.target.closest('.pdf-lang').classList.toggle('is-on', e.target.checked);
+          form.querySelector('#pdfName').textContent = name();
+        });
+      },
+      onSubmit: (form) => {
+        if (!langs.size) {
+          form.querySelector('#pdfError').textContent = 'En az bir dil seçin.';
+          return false;
+        }
+        state.cePdfLangs = order();
+        pdfIndir(order(), null);
+        return true;
+      }
+    });
+  }
+
   function pdfPenceresi() {
     if (!state.acik || state.pdfBusy) return;
+    if (state.acik.tur === 'ce') {
+      cePdfPenceresi();
+      return;
+    }
     const b = state.acik.belge;
     const langs = new Set(state.pdfLangs && state.pdfLangs.length ? state.pdfLangs : [b.dil]);
     const bol = Object.assign({}, b.bolumler);
@@ -857,6 +1283,143 @@
         state.pdfLangs = order();
         pdfIndir(order(), bol);
         return true;
+      }
+    });
+  }
+
+  /* ─── CE imzaları ────────────────────────────────────────
+     Veritabanında imzalar/<ad>.png. Programın deposu ve yayındaki site herkese açıktır; imzalar yalnız özel
+     veri deposunda durur. Belge imzanın adını taşır; havuzdan çıkarılan imza o belgelerde görünmez olur. */
+
+  const IMZA_EN_BUYUK = 2 * 1024 * 1024;
+
+  /** @returns { eklenen, ayni, hatalar } */
+  async function imzaEkle(files) {
+    const icerik = new Map([...state.imzalar.values()].map((v) => [v.b64, v.ad]));
+    // Havuzdan çıkarılmış ama belgede adı geçen imzanın adı başka görsele verilmez
+    const dolu = new Set([...state.imzalar.keys(), ...state.ceBelgeler.map((x) => x.belge.imza).filter(Boolean)]);
+    const out = { eklenen: 0, ayni: 0, hatalar: [] };
+    for (const f of files) {
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      if (bytes.length > IMZA_EN_BUYUK) {
+        out.hatalar.push(`${f.name}: 2 MB'tan büyük`);
+        continue;
+      }
+      if (!K.pngBilgi(bytes)) {
+        out.hatalar.push(`${f.name}: PNG değil`);
+        continue;
+      }
+      const b64 = WxDb.bytesToBase64(bytes);
+      if (icerik.has(b64)) {
+        out.ayni += 1;
+        continue;
+      }
+      const kok = K.imzaAdiTemizle(f.name);
+      let ad = kok;
+      for (let i = 2; dolu.has(ad); i += 1) ad = `${kok}-${i}`;
+      await state.db.write(K.imzaYolu(ad), bytes);
+      icerik.set(b64, ad);
+      dolu.add(ad);
+      out.eklenen += 1;
+    }
+    await belgeleriOku();
+    if (out.eklenen) state.db.sync();
+    return out;
+  }
+
+  async function imzaKaldir(ad) {
+    const v = state.imzalar.get(ad);
+    if (!v) return;
+    await state.db.remove(v.path);
+    await belgeleriOku();
+    state.db.sync();
+  }
+
+  function imzaPenceresi() {
+    let silinecek = null;
+    const s = WxBoot.settings();
+    const yer = s.mode === 'github'
+      ? `yalnız özel veri deposunda (<b>${esc(s.repo)}</b>, <code>imzalar/</code>) durur`
+      : 'bu tarayıcının veritabanında durur (yerel mod); GitHub deposuna bağlanınca özel veri deposuna gider';
+    pencere(`
+      <h2>CE imzaları</h2>
+      <p>Yeni CE belgesine bu imzalardan biri rastgele gelir; bir önceki CE belgesindeki imza gelmez.</p>
+      <div class="imza-grid" id="imzaGrid"></div>
+      <span class="default-hint">PNG, saydam arka planlı. Proje klasöründeki <code>imzalar/</code> klasöründe 23 imza hazır (tools/imza-ayir.py). Hepsini birden seçebilirsiniz.</span>
+      <div class="note" style="margin-top:0">İmzalar ${yer}. Programın deposu ve yayındaki site herkese açıktır; imzalar oraya girmez.</div>
+      <div class="result" id="imzaSonuc" role="status"></div>
+      <input type="file" id="imzaDosya" accept="image/png,.png" multiple hidden>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="imzaEkle">İmza dosyası ekle…</button>
+        <button type="button" class="btn btn-primary" data-close>Kapat</button>
+      </div>`, {
+      wide: true,
+      onOpen: (form) => {
+        const grid = form.querySelector('#imzaGrid');
+        const sonuc = form.querySelector('#imzaSonuc');
+        const say = (text, cls) => {
+          sonuc.textContent = text;
+          sonuc.className = `result${cls ? ` ${cls}` : ''}`;
+        };
+        const kullanim = (ad) => state.ceBelgeler.filter((x) => x.belge.imza === ad).length;
+        const ciz = () => {
+          if (!state.imzalar.size) {
+            grid.innerHTML = '<div class="imza-bos">Henüz imza yok.</div>';
+            return;
+          }
+          grid.innerHTML = [...state.imzalar.values()].map((v) => {
+            const n = kullanim(v.ad);
+            const sil = silinecek === v.ad;
+            return `<div class="imza-kutu${sil ? ' silinecek' : ''}" title="${esc(v.ad)}${n ? ` · ${n} CE belgesinde` : ''}">
+              <img src="${esc(v.src)}" alt="">
+              <span>${esc(v.ad)}${n ? ` · ${n}` : ''}</span>
+              <button type="button" data-sil="${esc(v.ad)}" title="${sil ? (n ? `${n} CE belgesinde kullanılıyor; orada imza görünmez olur` : 'Havuzdan çıkar') : 'Havuzdan çıkar'}">${sil ? 'Çıkar?' : '×'}</button>
+            </div>`;
+          }).join('');
+        };
+        ciz();
+        form.querySelector('#imzaEkle').addEventListener('click', () => form.querySelector('#imzaDosya').click());
+        form.querySelector('#imzaDosya').addEventListener('change', async (e) => {
+          const files = [...e.target.files];
+          e.target.value = '';
+          if (!files.length) return;
+          say('Yükleniyor…');
+          try {
+            const r = await imzaEkle(files);
+            const parts = [];
+            if (r.eklenen) parts.push(`${r.eklenen} imza eklendi`);
+            if (r.ayni) parts.push(`${r.ayni} imza zaten vardı`);
+            if (r.hatalar.length) parts.push(r.hatalar.join(', '));
+            say(parts.join(' · ') || 'Eklenecek imza yok.', r.hatalar.length ? 'err' : 'ok');
+          } catch (err) {
+            say(`Eklenemedi: ${err.message}`, 'err');
+          }
+          silinecek = null;
+          ciz();
+        });
+        grid.addEventListener('click', async (e) => {
+          const b = e.target.closest('[data-sil]');
+          if (!b) return;
+          const ad = b.dataset.sil;
+          if (silinecek !== ad) {
+            silinecek = ad;
+            ciz();
+            return;
+          }
+          silinecek = null;
+          await imzaKaldir(ad);
+          say(`${ad} havuzdan çıkarıldı.`, 'ok');
+          ciz();
+        });
+      },
+      onClose: () => {
+        if (state.acik && state.acik.tur === 'ce') {
+          imzaYoksaAta();
+          sagPanel();
+          onizle();
+        } else if (state.tab === 'ce' && !state.acik) {
+          ceListesi();
+        }
       }
     });
   }
@@ -1028,7 +1591,7 @@
     const program = WxBoot.PUBLISHED
       ? `Program: yayındaki sürüm <b>${esc(v.surum)}</b>${v.tarih ? ` · ${esc(zamanYaz(v.tarih))}` : ''}`
       : 'Program: bu bilgisayardaki kopya (dosyadan açıldı)';
-    $('dbInfo').innerHTML = `${where}<br>${state.belgeler.length} garanti belgesi · ${rows.length} dosya · ${(size / 1024).toFixed(1)} KB${status ? ` · ${esc(status)}` : ''}<br>${program}`;
+    $('dbInfo').innerHTML = `${where}<br>${state.belgeler.length} garanti belgesi · ${state.ceBelgeler.length} CE belgesi · ${state.imzalar.size} imza · ${rows.length} dosya · ${(size / 1024).toFixed(1)} KB${status ? ` · ${esc(status)}` : ''}<br>${program}`;
   }
 
   function veritabaniOlaylari() {
@@ -1088,13 +1651,13 @@
   /* ─── Başka cihazdan gelen değişiklik ────────────────── */
 
   async function disaridanGelen(paths) {
-    const docs = paths.filter((p) => K.belgeYoluMu(p) || p === K.AYARLAR_YOLU);
+    const docs = paths.filter((p) => K.belgeYoluMu(p) || K.ceYoluMu(p) || K.imzaYoluMu(p) || p === K.AYARLAR_YOLU);
     if (!docs.length || !state.ready) return;
     if (paths.includes(K.AYARLAR_YOLU)) await ayarlariOku();
     await belgeleriOku();
     if (state.acik) {
       if (paths.includes(state.acik.path) && !state.acikDirty) {
-        const item = state.belgeler.find((x) => x.path === state.acik.path);
+        const item = TUR[state.acik.tur].liste().find((x) => x.path === state.acik.path);
         if (!item) {
           toast('Bu belge başka bir bilgisayarda silindi. Kaydederseniz yeniden oluşur.', 'error');
           return;
@@ -1102,13 +1665,17 @@
         state.acik.belge = clone(item.belge);
         editorFormu();
         dilDugmeleri();
-        sagPanel();
         editorBaslik();
         toast('Belge başka bir bilgisayarda değiştirildi; güncel hâli açıldı.');
       }
+      // İmzalar başka bilgisayardan gelmiş olabilir: imzasız CE belgesine imza gelir
+      imzaYoksaAta();
+      sagPanel();
       onizle();
     } else if (state.tab === 'belgeler') {
       belgeListesi();
+    } else if (state.tab === 'ce') {
+      ceListesi();
     }
   }
 
@@ -1121,7 +1688,10 @@
   /* ─── Açılış ─────────────────────────────────────────── */
 
   function sabitOlaylar() {
-    $('btnNew').addEventListener('click', () => yeniBelgePenceresi(null));
+    $('btnNew').addEventListener('click', () => {
+      if (state.tab === 'ce') yeniCePenceresi(null);
+      else yeniBelgePenceresi(null);
+    });
     $('docEmpty').addEventListener('click', (e) => {
       if (e.target.closest('[data-new]')) yeniBelgePenceresi(null);
     });
@@ -1129,6 +1699,18 @@
     $('docList').addEventListener('click', (e) => {
       const card = e.target.closest('.doc-card');
       if (card) location.hash = belgeHash(card.dataset.seri);
+    });
+    $('ceEmpty').addEventListener('click', (e) => {
+      if (e.target.closest('[data-new]')) yeniCePenceresi(null);
+    });
+    $('ceUyari').addEventListener('click', (e) => {
+      if (e.target.closest('[data-imzalar]')) imzaPenceresi();
+    });
+    $('ceImzalar').addEventListener('click', imzaPenceresi);
+    $('ceSearch').addEventListener('input', ceListesi);
+    $('ceList').addEventListener('click', (e) => {
+      const card = e.target.closest('.doc-card');
+      if (card) location.hash = TUR.ce.hash(card.dataset.seri);
     });
     document.querySelectorAll('.home-tab').forEach((b) => b.addEventListener('click', () => {
       location.hash = b.dataset.tab === 'belgeler' ? '#/' : `#/${b.dataset.tab}`;
@@ -1218,7 +1800,7 @@
   });
 
   // Test ve geliştirme için: tarayıcı konsolundan ya da otomatik denemeden erişilir
-  window.WxApp = { state, pdfOlustur, onizle, belgeleriOku, ayarlariOku };
+  window.WxApp = { state, pdfOlustur, onizle, belgeleriOku, ayarlariOku, ceHazirla, imzaEkle };
 
   basla();
 })();

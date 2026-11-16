@@ -17,6 +17,7 @@
   <link rel="apple-touch-icon" href="assets/simge/simge-apple-180.png">
   <link rel="stylesheet" href="codes/tema.css">
   <link rel="stylesheet" href="codes/belge.css">
+  <link rel="stylesheet" href="codes/ce.css">
 </head>
 <body>
 
@@ -39,8 +40,8 @@
     <div class="home-bar">
       <img src="assets/logos/dolfin.png" alt="Dolfin" class="home-logo">
       <div class="home-title">
-        <h1>Garanti Belgesi</h1>
-        <p>WarrantyX · Endüstriyel parça yıkama makineleri · TR · EN · DE</p>
+        <h1 id="homeTitle">Garanti Belgesi</h1>
+        <p id="homeSub">WarrantyX · Endüstriyel parça yıkama makineleri · TR · EN · DE</p>
       </div>
       <div class="home-actions">
         <button type="button" class="btn" id="btnKur" hidden title="Masaüstüne ve başlat menüsüne ekler; kendi penceresinde açılır">Uygulama olarak yükle</button>
@@ -48,7 +49,8 @@
       </div>
     </div>
     <nav class="home-nav">
-      <button type="button" class="home-tab active" data-tab="belgeler">Belgeler <span id="docCount" class="home-count"></span></button>
+      <button type="button" class="home-tab active" data-tab="belgeler">Garanti Belgesi <span id="docCount" class="home-count"></span></button>
+      <button type="button" class="home-tab" data-tab="ce">CE Belgesi <span id="ceCount" class="home-count"></span></button>
       <button type="button" class="home-tab" data-tab="ayarlar">Ayarlar</button>
       <button type="button" class="home-tab" data-tab="veritabani">Veritabanı</button>
     </nav>
@@ -60,6 +62,17 @@
       </div>
       <div id="docList" class="doc-list"></div>
       <div id="docEmpty" class="hidden"></div>
+    </div>
+
+    <div id="pageCe" class="home-page hidden">
+      <div class="home-tools">
+        <input type="search" id="ceSearch" class="search" placeholder="Seri no, model ya da müşteri ara…" autocomplete="off">
+        <span id="ceResult"></span>
+        <button type="button" class="btn btn-sm home-tools-end" id="ceImzalar" title="CE belgelerine rastgele gelen imzalar">İmzalar</button>
+      </div>
+      <div id="ceUyari"></div>
+      <div id="ceList" class="doc-list"></div>
+      <div id="ceEmpty" class="hidden"></div>
     </div>
 
     <div id="pageAyarlar" class="home-page hidden">
@@ -87,8 +100,14 @@
           <pre class="repo-tree">warrantyx-veri/
 ├── README.md                ilk bağlantıda program yazar
 ├── ayarlar.json             firma bilgileri, garanti süresi, kapak
-└── belgeler/
-    ├── 0626051.json         her garanti belgesi bir dosya (dosya adı = Seri No)
+├── belgeler/
+│   ├── 0626051.json         her garanti belgesi bir dosya (dosya adı = Seri No)
+│   └── …
+├── ce/
+│   ├── 0226089.json         her CE belgesi bir dosya (dosya adı = Seri No)
+│   └── …
+└── imzalar/
+    ├── imza-01.png          CE imzaları: yalnız bu özel depoda
     └── …</pre>
           <p class="field-help">Kayıt önce bu bilgisayarın tarayıcı veritabanına yazılır, internet kesilse de kaybolmaz. Değişenler en geç 1 dakikada bir, sayfadan çıkarken ve sayfa açılırken tek commit olarak depoya gönderilir. İki bilgisayarda aynı belge değişirse yeni olan asıl dosya olur, eskisi yanında <code>.catisma-&lt;tarih&gt;</code> adıyla saklanır.</p>
         </div>
@@ -140,6 +159,7 @@
   <script src="codes/kayit.js"></script>
   <script src="codes/metin.js"></script>
   <script src="codes/belge.js"></script>
+  <script src="codes/ce.js"></script>
   <script src="codes/pdf.js"></script>
   <script src="codes/pdf-dom.js"></script>
   <script src="codes/app.js"></script>

@@ -3,7 +3,8 @@
    Ekrandaki düzeni PDF'e çevirir: sayfalar tarayıcıda dizilir, her kutu, çizgi ve harfin yeri ölçülür,
    PDF'e aynı yerde çizilir. Sayfalar vektör kalır; metin seçilip aranabilir.
    Yazı tipleri programla gelir (assets/fonts): Calibri yerine Carlito, Segoe UI yerine Selawik.
-   Ölçüleri aynıdır, bu yüzden dizgi ekrandakiyle aynı olur ve bilgisayarda yüklü yazı tiplerine bağlı kalmaz. */
+   Ölçüleri aynıdır, bu yüzden dizgi ekrandakiyle aynı olur ve bilgisayarda yüklü yazı tiplerine bağlı kalmaz.
+   CE belgesindeki Caladea ve Barlow Semi Condensed bilgisayarda olmadığı için ekrana da eklenir (useOnScreen). */
 
 (function (root) {
   'use strict';
@@ -19,12 +20,18 @@
     { family: 'Calibri', weight: 700, file: 'Carlito-Bold.ttf', name: 'Carlito-Bold' },
     { family: 'Segoe UI', weight: 400, file: 'selawk.ttf', name: 'Selawik-Regular' },
     { family: 'Segoe UI', weight: 600, file: 'selawksb.ttf', name: 'Selawik-Semibold' },
-    { family: 'Segoe UI', weight: 700, file: 'selawkb.ttf', name: 'Selawik-Bold' }
+    { family: 'Segoe UI', weight: 700, file: 'selawkb.ttf', name: 'Selawik-Bold' },
+    // CE belgesi: bilgisayarda yüklü olmadıkları için ekranda da bunlar kullanılır (useOnScreen)
+    { family: 'Caladea', weight: 400, file: 'Caladea-Regular.ttf', name: 'Caladea-Regular' },
+    { family: 'Barlow Semi Condensed', weight: 300, file: 'BarlowSemiCondensed-Light.ttf', name: 'BarlowSemiCondensed-Light' },
+    { family: 'Barlow Semi Condensed', weight: 400, file: 'BarlowSemiCondensed-Regular.ttf', name: 'BarlowSemiCondensed-Regular' }
   ];
   // Hiçbir yazı tipinde olmayan görünmez karakterler çizilmez
   const INVISIBLE = new Set([0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]);
 
   let faces = null;
+  /** Ekranda da kullanılan yazı tipleri: PDF bitince kaldırılmaz */
+  const onScreen = new Set();
 
   /** @param readBytes dosya adı → { ok, bytes } */
   async function loadFonts(readBytes) {
@@ -47,18 +54,35 @@
 
   function end() {
     document.documentElement.classList.remove('pdf-exporting');
-    if (faces) for (const f of faces) document.fonts.delete(f.fontFace);
+    if (faces) for (const f of faces) if (!onScreen.has(f)) document.fonts.delete(f.fontFace);
+  }
+
+  /** Bilgisayarda olmayan yazı tipi önizlemede de görünsün: PDF'tekiyle aynı dosya, aynı dizgi */
+  function useOnScreen(family) {
+    if (!faces) throw new Error('Önce loadFonts çağrılmalı');
+    for (const f of faces) {
+      if (f.family !== family || onScreen.has(f)) continue;
+      document.fonts.add(f.fontFace);
+      onScreen.add(f);
+    }
   }
 
   /* ─── Yazı tipi seçimi ────────────────────────────────── */
 
   const chainCache = new Map();
 
+  /** Tarayıcının seçtiği kesim (CSS ağırlık eşleştirmesi): tam ağırlık yoksa 400-500 arası önce 500'e kadar
+      kalına, sonra inceye; 400 altı inceye; 500 üstü kalına bakar. Calibri 600 → 700, Barlow 300 → 300. */
   function pickFace(family, weight) {
     const own = faces.filter((f) => f.family === family);
     if (!own.length) return null;
-    const wanted = weight >= 700 ? 700 : weight >= 550 ? 600 : 400;
-    return own.find((f) => f.weight === wanted) || own.find((f) => f.weight === 700 && wanted === 600) || own[0];
+    const exact = own.find((f) => f.weight === weight);
+    if (exact) return exact;
+    const lighter = own.filter((f) => f.weight < weight).sort((a, b) => b.weight - a.weight);
+    const heavier = own.filter((f) => f.weight > weight).sort((a, b) => a.weight - b.weight);
+    if (weight >= 400 && weight <= 500) return heavier.find((f) => f.weight <= 500) || lighter[0] || heavier[0];
+    if (weight < 400) return lighter[0] || heavier[0];
+    return heavier[0] || lighter[0];
   }
 
   /** CSS sırasıyla yazı tipleri; bulunmayan harf sıradakinden alınır */
@@ -743,5 +767,5 @@
     return { bytes, pages: sheets.length, missing: [...state.missing], failedImages: state.failedImages };
   }
 
-  root.PidPdfDom = { loadFonts, begin, end, render, FACES };
+  root.PidPdfDom = { loadFonts, begin, end, render, useOnScreen, FACES };
 })(typeof self !== 'undefined' ? self : this);

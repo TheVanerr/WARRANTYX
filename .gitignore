@@ -1,2 +1,7 @@
 node_modules/
 _site/
+
+# İmzalar herkese açık program deposuna girmez: özel veri deposunda (warrantyx-veri) durur.
+# imzalar/: tools/imza-ayir.py çıktısı. Kökteki PDF dosyaları: imzalı taramalar.
+/imzalar/
+/*.pdf

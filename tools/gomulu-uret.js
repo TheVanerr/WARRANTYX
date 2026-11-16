@@ -1,6 +1,7 @@
 /* Dosyadan (çift tıkla) açılan sayfa diskteki dosyayı programla okuyamaz; tarayıcı fotoğrafı da PDF için
    piksel olarak okutmaz. Bu yüzden belgede kullanılan görseller ve PDF'e gömülen yazı tipleri script dosyası
-   olarak gelir. Logo, fotoğraf ya da yazı tipi değişince çalıştırın:  npm run gomulu */
+   olarak gelir. Logo ya da yazı tipi değişince çalıştırın:  npm run gomulu
+   CE imzaları buraya gömülmez: program deposu herkese açıktır, imzalar özel veri deposundan okunur. */
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -8,7 +9,11 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const ASSETS = path.join(ROOT, 'assets');
 
-const FONTS = ['Carlito-Regular.ttf', 'Carlito-Bold.ttf', 'selawk.ttf', 'selawksb.ttf', 'selawkb.ttf'];
+const FONTS = [
+  'Carlito-Regular.ttf', 'Carlito-Bold.ttf', 'selawk.ttf', 'selawksb.ttf', 'selawkb.ttf',
+  // CE belgesi: Cambria yerine ölçüleri aynı Caladea, Bahnschrift (DIN) yerine Barlow Semi Condensed
+  'Caladea-Regular.ttf', 'BarlowSemiCondensed-Light.ttf', 'BarlowSemiCondensed-Regular.ttf'
+];
 const IMAGES = {
   logo: ['logos/dolfin.png', 'image/png']
 };

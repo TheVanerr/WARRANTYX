@@ -49,10 +49,12 @@
     text: [
       '# WarrantyX veri deposu',
       '',
-      'Dolfin garanti belgeleri. Bu depo WarrantyX programı tarafından yönetilir; dosyaları elle değiştirmeyin.',
+      'Dolfin garanti belgeleri ve CE uygunluk beyanları. Bu depo WarrantyX programı tarafından yönetilir; dosyaları elle değiştirmeyin.',
       '',
       '- `ayarlar.json`: firma bilgileri ve garanti varsayılanları',
       '- `belgeler/<Seri No>.json`: her garanti belgesi bir dosya',
+      '- `ce/<Seri No>.json`: her CE belgesi bir dosya',
+      '- `imzalar/<ad>.png`: CE belgelerinin imzaları (yalnız bu özel depoda; depo açılmamalı)',
       '',
       'Eski bir sürüm GitHub geçmişinden alınabilir.',
       ''

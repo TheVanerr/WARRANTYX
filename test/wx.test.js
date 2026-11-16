@@ -96,6 +96,146 @@ test('JSON dosyası Türkçe harfleri korur ve geri okunur', () => {
   assert.ok(str(WxKayit.encode(b)).includes('İĞNE ÇÖZÜM'));
 });
 
+/* ─── CE belgesi ────────────────────────────────────────── */
+
+test('CE belgesi: ürün bilgileri taranmış belgedeki gibi gelir, silinen alan boş kalır', () => {
+  const b = WxKayit.ceNormalize({ seriNo: ' 0226089 ', dil: 'tr', imza: '../x', marka: '' });
+  assert.equal(b.seriNo, '0226089');
+  assert.equal(b.dil, 'en', 'CE belgesi EN ya da DE');
+  assert.equal(b.model, 'LYM 1350 NS');
+  assert.deepEqual(b.urunAdi, { en: 'TURN TABLE PARTS WASHERS ™', de: 'Drehteller-Unterlegscheiben ™' });
+  assert.equal(b.lvdRapor, '62024041.001');
+  assert.equal(b.riskRapor, 'RA62024041001');
+  assert.equal(b.marka, '', 'silinen alan varsayılana dönmez');
+  assert.equal(b.imza, '', 'geçersiz imza adı alınmaz');
+  assert.equal(b.tarih, '');
+  const bos = WxKayit.bosCe(new Date(2026, 10, 16));
+  assert.equal(bos.tarih, '2026-11-16');
+  assert.equal(bos.imalYili, '2026');
+  assert.equal(bos.seriNo, '', 'seri no ve tarih şablonda boş: belgede doldurulur');
+});
+
+test('CE belgesi ce/ klasöründe durur; garanti belgesiyle aynı seri no çakışmaz', () => {
+  assert.equal(WxKayit.ceYolu('0226089'), 'ce/0226089.json');
+  assert.ok(WxKayit.ceYoluMu('ce/0226089.json'));
+  assert.ok(!WxKayit.ceYoluMu('belgeler/0226089.json'));
+  assert.ok(!WxKayit.belgeYoluMu('ce/0226089.json'));
+  assert.ok(!WxKayit.ceYoluMu('ce/0226089.json.catisma-20261116-120000'));
+  assert.ok(WxKayit.imzaYoluMu('imzalar/imza-07.png'));
+  assert.ok(!WxKayit.imzaYoluMu('imzalar/alt/imza.png'));
+  assert.equal(WxKayit.imzaAdi('imzalar/imza-07.png'), 'imza-07');
+  assert.equal(WxKayit.imzaAdiTemizle('İMZA 07.PNG'), 'imza-07');
+  assert.equal(WxKayit.imzaAdiTemizle('.png'), 'imza');
+});
+
+test('CE PDF dosya adı eski CE dosyaları gibi: seri-müşteri-model CE CONFORMITY (EN-DEU)', () => {
+  const b = { seriNo: '0226089', musteri: 'KSYSTE', model: 'LYM 1350 NS' };
+  assert.equal(WxKayit.cePdfDosyaAdi(b, 'CE CONFORMITY', ['DEU']), '0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (DEU).pdf');
+  assert.equal(WxKayit.cePdfDosyaAdi(b, 'CE CONFORMITY', ['EN', 'DEU']), '0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf');
+  assert.equal(WxMetin.ceDil('de').dosyaEtiketi, 'DEU');
+});
+
+/** Sıralı deneme üreteci: Math.random yerine */
+function uretec(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+const IMZALAR = Array.from({ length: 23 }, (_, i) => `imza-${String(i + 1).padStart(2, '0')}`);
+
+test('her yeni CE belgesine rastgele imza gelir, bir önceki CE belgesindeki imza gelmez', () => {
+  const rnd = uretec(7);
+  const belgeler = [];
+  const sayac = new Map();
+  for (let i = 0; i < 2000; i += 1) {
+    const imza = WxKayit.yeniCeImzasi(belgeler, IMZALAR, rnd);
+    assert.ok(IMZALAR.includes(imza));
+    if (belgeler.length) assert.notEqual(imza, belgeler[belgeler.length - 1].imza, `${i}. belge öncekinin imzasını aldı`);
+    belgeler.push({ olusturma: new Date(Date.UTC(2026, 0, 1) + i * 60000).toISOString(), imza });
+    sayac.set(imza, (sayac.get(imza) || 0) + 1);
+  }
+  assert.equal(sayac.size, 23, 'her imza kullanılır');
+  for (const [imza, n] of sayac) assert.ok(n > 50 && n < 130, `${imza} ${n} kez: dağılım düzgün değil`);
+  // Liste sırası önemli değil: bir önceki belge en son oluşturulandır
+  const karisik = [belgeler[5], belgeler[belgeler.length - 1], belgeler[0]];
+  for (let i = 0; i < 200; i += 1) assert.notEqual(WxKayit.yeniCeImzasi(karisik, IMZALAR, rnd), belgeler[belgeler.length - 1].imza);
+});
+
+test('imza seçimi: hiç imza yoksa boş, tek imza varsa o; imza değiştirince komşu belgelerinki gelmez', () => {
+  assert.equal(WxKayit.yeniCeImzasi([], [], Math.random), '');
+  assert.equal(WxKayit.yeniCeImzasi([{ olusturma: '2026-01-01', imza: 'a' }], ['a'], Math.random), 'a');
+  const rnd = uretec(3);
+  const belgeler = [
+    { path: 'ce/1.json', belge: { olusturma: '2026-01-01T00:00:00Z', imza: 'imza-01' } },
+    { path: 'ce/2.json', belge: { olusturma: '2026-01-02T00:00:00Z', imza: 'imza-02' } },
+    { path: 'ce/3.json', belge: { olusturma: '2026-01-03T00:00:00Z', imza: 'imza-03' } }
+  ];
+  for (let i = 0; i < 300; i += 1) {
+    const yeni = WxKayit.baskaCeImzasi(belgeler[1].belge, belgeler, IMZALAR, rnd, 'ce/2.json');
+    assert.ok(!['imza-01', 'imza-02', 'imza-03'].includes(yeni), yeni);
+  }
+  // Üç imza varken ortadaki belge yalnız komşularındakinden farklı olabilir: kendi imzası kalır
+  assert.equal(WxKayit.baskaCeImzasi(belgeler[1].belge, belgeler, ['imza-01', 'imza-02', 'imza-03'], rnd, 'ce/2.json'), 'imza-02');
+});
+
+/** Elle yazılmış PNG başlığı: IHDR ve pHYs (CRC denetlenmez) */
+function pngBasligi(w, h, dpm) {
+  const chunk = (type, data) => {
+    const b = Buffer.alloc(12 + data.length);
+    b.writeUInt32BE(data.length, 0);
+    b.write(type, 4, 'latin1');
+    data.copy(b, 8);
+    return b;
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 3;
+  const parts = [Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr)];
+  if (dpm) {
+    const phys = Buffer.alloc(9);
+    phys.writeUInt32BE(dpm, 0);
+    phys.writeUInt32BE(dpm, 4);
+    phys[8] = 1;
+    parts.push(chunk('pHYs', phys));
+  }
+  parts.push(chunk('IDAT', Buffer.from([0, 1, 2])), chunk('IEND', Buffer.alloc(0)));
+  return new Uint8Array(Buffer.concat(parts));
+}
+
+test('imza PNG boyutu ve çözünürlüğü okunur; PNG olmayan dosya alınmaz', () => {
+  assert.deepEqual(WxKayit.pngBilgi(pngBasligi(390, 232, 11811)), { w: 390, h: 232, dpi: 300 });
+  assert.deepEqual(WxKayit.pngBilgi(pngBasligi(400, 200, 23622)), { w: 400, h: 200, dpi: 600 });
+  assert.deepEqual(WxKayit.pngBilgi(pngBasligi(10, 10)), { w: 10, h: 10, dpi: 300 }, 'pHYs yoksa tarama çözünürlüğü');
+  assert.equal(WxKayit.pngBilgi(new TextEncoder().encode('GIF89a…')), null);
+  assert.equal(WxKayit.pngBilgi(new Uint8Array(0)), null);
+});
+
+test('CE metni EN ve DE dilinde aynı yapıda; standart açıklamaları belgedeki satırlarıyla', () => {
+  const en = WxMetin.CE.en;
+  const de = WxMetin.CE.de;
+  assert.deepEqual(keysOf(de, '').sort(), keysOf(en, '').sort());
+  assert.equal(en.standartlar.length, 5);
+  assert.deepEqual(de.standartlar.map((s) => s.kod), en.standartlar.map((s) => s.kod));
+  assert.deepEqual(de.kriterler.map((k) => k[0]), en.kriterler.map((k) => k[0]));
+  // Taranmış belgelerdeki satır sayıları: EN 5-5-3-3-2, DE 6-4-4-3-3
+  assert.deepEqual(en.standartlar.map((s) => s.metin.length), [5, 5, 3, 3, 2]);
+  assert.deepEqual(de.standartlar.map((s) => s.metin.length), [6, 4, 4, 3, 3]);
+  assert.equal(en.beyan.length, 3);
+  assert.equal(de.beyan.length, 4);
+  for (const t of [en, de]) {
+    for (const line of [...t.ust.flat(), ...t.beyan, ...t.standartlar.flatMap((s) => s.metin)]) {
+      assert.ok(line && line === line.trim(), `satır boş ya da kenarında boşluk var: "${line}"`);
+    }
+  }
+  assert.ok(en.standartlar[0].metin.join(' ').includes('EN 60204-1:2018 addresses requirements related to electric shock protection'));
+  assert.ok(de.standartlar[0].metin.join(' ').includes('Kurzschluss- und Überstromschutz'));
+});
+
 /* ─── Metinler ──────────────────────────────────────────── */
 
 function keysOf(obj, prefix) {
@@ -184,6 +324,24 @@ test('bir bilgisayarda oluşturulan belge öbüründe görünür, seri no deği�
   assert.ok(s.changed.includes('belgeler/0626052.json'));
 });
 
+test('CE belgesi ve imza PNG dosyası depoya gider, öbür bilgisayara bozulmadan gelir', async () => {
+  const hub = createFakeGitHub({ name: 'warrantyx-veri' });
+  const a = device(hub);
+  const b = device(hub);
+  const png = pngBasligi(390, 232, 11811);
+  const ce = WxKayit.ceNormalize({ seriNo: '0226089', tarih: '2026-10-05', imza: 'imza-07', olusturma: '2026-10-05T08:00:00.000Z' });
+  await a.write(WxKayit.imzaYolu('imza-07'), png);
+  await a.write(WxKayit.ceYolu('0226089'), WxKayit.encode(ce));
+  const s = await a.sync();
+  assert.equal(s.state, 'ok', s.error);
+  assert.deepEqual([...hub.files().keys()].sort(), ['README.md', 'ce/0226089.json', 'imzalar/imza-07.png']);
+  await b.sync();
+  const gelen = await b.read('imzalar/imza-07.png');
+  assert.deepEqual([...gelen.bytes], [...png], 'PNG baytları aynı');
+  assert.deepEqual(WxKayit.pngBilgi(gelen.bytes), { w: 390, h: 232, dpi: 300 });
+  assert.equal(WxKayit.decode((await b.read('ce/0226089.json')).bytes).imza, 'imza-07');
+});
+
 test('açık depoya bağlanılmaz: müşteri verisi yalnız özel depoda durur', async () => {
   const hub = createFakeGitHub({ name: 'warrantyx-veri', isPrivate: false });
   const remote = WxGitHub.createRemote({ repo: hub.id, token: hub.token, fetchFn: hub.fetchFn });
@@ -239,7 +397,26 @@ test('yayın sitesi damgalanır: script ve stiller içerik özetiyle, her dosya 
     // Sonradan yüklenen yazı tipinin özeti damgada; eski dosyalar, testler ve araçlar yayınlanmaz
     const dosyalar = JSON.parse(html.match(/data-dosyalar='([^']+)'/)[1]);
     assert.equal(dosyalar['assets/gomulu-yazitipi.js'], site.ozet('assets/gomulu-yazitipi.js'));
-    for (const gizli of ['_eski', 'test', 'tools', 'package.json', 'README.md']) assert.ok(!site.var(gizli), `${gizli} yayınlanmamalı`);
+    for (const gizli of ['_eski', 'test', 'tools', 'package.json', 'README.md', 'imzalar']) assert.ok(!site.var(gizli), `${gizli} yayınlanmamalı`);
+    for (const f of ['codes/ce.js', 'codes/ce.css']) assert.ok(html.includes(`${f}?v=${site.ozet(f)}`), `${f} sayfada yok`);
+  } finally {
+    site.temizle();
+  }
+});
+
+test('imzalar herkese açık siteye ve program deposuna girmez', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const ignore = fs.readFileSync(path.join(root, '.gitignore'), 'utf8').split(/\r?\n/);
+  assert.ok(ignore.includes('/imzalar/'), '.gitignore imzalar klasörünü dışarıda bırakmalı');
+  assert.ok(ignore.includes('/*.pdf'), '.gitignore kökteki imzalı taramaları dışarıda bırakmalı');
+  const site = siteKur();
+  try {
+    const bak = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? bak(path.join(dir, e.name)) : [path.join(dir, e.name)]));
+    const dosyalar = bak(site.out).map((f) => path.relative(site.out, f).split(path.sep).join('/'));
+    assert.ok(!dosyalar.some((f) => /imza/i.test(f)), `sitede imza dosyası var: ${dosyalar.filter((f) => /imza/i.test(f))}`);
+    for (const f of dosyalar.filter((x) => x.endsWith('.js'))) assert.ok(!site.oku(f).toString('utf8').includes('WX_IMZA'), `${f} imza taşıyor`);
   } finally {
     site.temizle();
   }

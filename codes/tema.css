@@ -120,6 +120,15 @@ input[type=date].field-input::-webkit-calendar-picker-indicator { filter: invert
 .home-tools { display: flex; align-items: center; gap: 12px; padding: 18px 40px 0; }
 .home-tools .search { max-width: 420px; }
 .home-tools span { color: var(--muted); font-size: 12px; }
+.home-tools .home-tools-end { margin-left: auto; }
+
+/* CE belgesi: imza henüz yüklenmediyse listenin üstünde */
+.imza-uyari {
+  margin: 18px 40px 0; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  border-left: 3px solid var(--warn); background: rgba(245, 165, 36, 0.08); border-radius: 4px; color: #d9c79f; font-size: 12.5px; line-height: 1.5;
+}
+.imza-uyari b { color: var(--text); font-weight: 600; }
+.imza-yok { padding: 8px 10px; border-left: 3px solid var(--warn); background: rgba(245, 165, 36, 0.08); border-radius: 4px; color: #d9c79f; font-size: 12px; line-height: 1.45; }
 
 .doc-list { padding: 18px 40px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; align-content: start; }
 .doc-card {
@@ -195,6 +204,25 @@ input[type=date].field-input::-webkit-calendar-picker-indicator { filter: invert
 .side-section:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
 .side-section small { font-weight: 400; color: #6c7385; }
 .default-hint { font-size: 11px; color: #6c7385; }
+.field > label small { color: #6c7385; font-size: 10.5px; margin-left: 4px; }
+.side-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* CE belgesinin imzası: beyaz zeminde, belgedeki gibi */
+.ce-imza-onizleme { height: 86px; padding: 8px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: var(--radius); }
+.ce-imza-onizleme img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* İmzalar penceresi */
+.imza-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; max-height: 46vh; overflow: auto; padding: 2px; }
+.imza-kutu { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 6px 6px 4px; background: #fff; border-radius: 4px; color: #5b6270; font-size: 10.5px; }
+.imza-kutu img { width: 100%; height: 54px; object-fit: contain; }
+.imza-kutu button {
+  position: absolute; top: 3px; right: 3px; min-width: 20px; height: 20px; padding: 0 5px; border: 0; border-radius: 10px;
+  background: rgba(0, 0, 0, 0.06); color: #7a8190; font: 600 12px/20px var(--font); cursor: pointer;
+}
+.imza-kutu button:hover { background: #fde8e8; color: #b00000; }
+.imza-kutu.silinecek { box-shadow: 0 0 0 2px var(--dolfin); }
+.imza-kutu.silinecek button { background: var(--dolfin-deep); color: #fff; font-size: 11px; }
+.imza-bos { grid-column: 1 / -1; color: var(--muted); padding: 10px 2px; }
 
 .preview { grid-area: main; min-width: 0; min-height: 0; overflow: auto; background: var(--canvas); }
 .pages { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 26px 24px 60px; }
@@ -264,5 +292,6 @@ body.in-editor .wx-chip { display: none; }
   .empty-hero { grid-template-columns: 1fr; }
   .empty-thumb { display: none; }
   .home-bar, .home-nav, .home-tools, .doc-list, .page-inner { padding-left: 16px; padding-right: 16px; }
+  .imza-uyari { margin-left: 16px; margin-right: 16px; flex-direction: column; align-items: flex-start; }
   .connect-form, .grid-3 { grid-template-columns: 1fr; }
 }

@@ -1,0 +1,55 @@
+/* CE uygunluk beyanı (A4 dikey, 210 × 297 mm). Yerleşim ce.js'te: her satır taranmış belgeden ölçülen
+   taban çizgisine oturur. Burada yazı ailesi, renk ve harf aralığı durur; boylar ce.js'teki SINIF tablosunda.
+   Renkler taramadan ölçüldü (tarayıcının açtığı tonlar geri alındı). PDF çizici kutu, düz renk, SVG yolu,
+   görsel ve yazı çizer; gölge, degrade ve ::before kullanılmaz. */
+
+.wx-ce {
+  --ce-siyah: #000;
+  --ce-baslik: #434b55;
+  --ce-kriter: #5c646e;
+  --ce-beyan: #555a65;
+  --ce-firma: #31313d;
+  --ce-adres: #4a4b57;
+  --ce-web: #575562;
+  --ce-ust: #3d3d42;
+  --ce-etiket: #c2c4ca;
+  --ce-ayrac: #d7d7d7;
+  --ce-imza-cizgi: #dbdbdb;
+  font-family: 'Segoe UI', sans-serif;
+  color: var(--ce-siyah);
+  line-height: 1.2;
+}
+.wx-ce .ce-l { position: absolute; margin: 0; padding: 0; white-space: pre; font-weight: 400; }
+.wx-ce .ce-logo, .wx-ce .ce-imza { position: absolute; display: block; object-fit: contain; }
+.wx-ce .ce-sup { font-size: 0.62em; vertical-align: 0.5em; line-height: 0; }
+
+/* Üst bilgi: DIN (Bahnschrift yerine Barlow Semi Condensed), sağa yaslı, ince */
+.wx-ce .ce-ust { font-family: 'Barlow Semi Condensed', 'Segoe UI', sans-serif; font-weight: 300; color: var(--ce-ust); }
+.wx-ce .ce-ayrac { position: absolute; width: 0; border-left: 0.2mm solid var(--ce-ayrac); }
+.wx-ce .ce-baslik { font-family: Caladea, Cambria, serif; color: var(--ce-baslik); letter-spacing: -0.66pt; }
+
+/* İmalatçı */
+.wx-ce .ce-etiket { font-family: 'Barlow Semi Condensed', 'Segoe UI', sans-serif; color: var(--ce-etiket); letter-spacing: 0.79pt; }
+.wx-ce .ce-firma { font-family: Caladea, Cambria, serif; color: var(--ce-firma); letter-spacing: -0.65pt; }
+.wx-ce .ce-adres { font-family: 'Barlow Semi Condensed', 'Segoe UI', sans-serif; color: var(--ce-adres); letter-spacing: -0.37pt; }
+.wx-ce .ce-web { font-family: 'Barlow Semi Condensed', 'Segoe UI', sans-serif; color: var(--ce-web); letter-spacing: -0.36pt; }
+
+/* Ürün bilgileri ve kriterler */
+.wx-ce .ce-tablo-k { letter-spacing: -0.3pt; }
+.wx-ce .ce-tablo-v { letter-spacing: -0.17pt; }
+.wx-ce .ce-kriter-baslik { font-family: Caladea, Cambria, serif; color: var(--ce-kriter); letter-spacing: 0.2pt; }
+.wx-ce .ce-cizgi { position: absolute; background: #1a1a1a; }
+
+/* Standartlar: kalın standart numarası, ince ad; açıklama sayfa genişliğinde akar */
+.wx-ce .ce-std-ad b { font-weight: 700; }
+
+/* CE işareti ve beyan */
+.wx-ce .ce-isaret { position: absolute; }
+.wx-ce .ce-isaret-svg { display: block; width: 100%; height: 100%; fill: #000; }
+.wx-ce .ce-beyan { font-family: Caladea, Cambria, serif; color: var(--ce-beyan); letter-spacing: -0.3pt; }
+
+/* İmza: ad büyük ve kalın, ünvan küçük; imza görseli ad satırının ortasında */
+.wx-ce .ce-imza-satir span { font-size: 6.73pt; }
+.wx-ce .ce-imza-satir .ce-buyuk { font-size: 8.6pt; }
+.wx-ce .ce-kalin { font-weight: 700; }
+.wx-ce .ce-imza-cizgi { position: absolute; height: 0; border-top: 0.17mm solid var(--ce-imza-cizgi); }
