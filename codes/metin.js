@@ -356,6 +356,8 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
     adres: '1. ORGANİZE SANAYİ BÖLGESİ ORHAN IŞIK BULVARI NO:1 ANKARA / TÜRKİYE',
     web: 'https://www.dolfin.info.tr/en  - dolfin@dolfintr.com',
     urunAdi: 'Product name',
+    // Ürün adı her CE belgesinde aynı: tüm makineler endüstriyel parça yıkama makinesidir (sol menüde alanı yok)
+    urun: 'Industrial Parts Washing Machine',
     tipModel: 'Type / Model',
     seriNo: 'Serial Number',
     imalYili: 'Year of manufacture',
@@ -444,6 +446,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
     adres: '1. ORGANİZE SANAYİ BÖLGESİ ORHAN IŞIK BULVARI NO:1 ANKARA / TÜRKİYE',
     web: 'https://www.dolfin.info.tr/en  - dolfin@dolfintr.com',
     urunAdi: 'Produktname',
+    urun: 'Industrie-Teilereinigungsmaschine',
     tipModel: 'Typ / Modell',
     seriNo: 'Seriennummer',
     imalYili: 'Baujahr',

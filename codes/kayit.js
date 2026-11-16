@@ -154,10 +154,10 @@
   const IMZA_DIR = 'imzalar';
   const IMZA_ADI = /^[A-Za-z0-9._-]{1,80}$/;
 
-  /** Taranmış CE belgesindeki ürün bilgileri: yeni CE belgesine gelir, sol menüden değişir */
+  /** Taranmış CE belgesindeki ürün bilgileri: yeni CE belgesine gelir, sol menüden değişir.
+      Ürün adı belgede tutulmaz: her makinede aynıdır, CE metninde sabittir (WxMetin.CE.<dil>.urun) */
   const CE_VARSAYILAN = Object.freeze({
     model: 'LYM 1350 NS',
-    urunAdi: Object.freeze({ en: 'TURN TABLE PARTS WASHERS ™', de: 'Drehteller-Unterlegscheiben ™' }),
     marka: 'Dolfin®',
     lvdRapor: '62024041.001',
     riskRapor: 'RA62024041001'
@@ -165,7 +165,6 @@
 
   function ceNormalize(raw) {
     const src = raw && typeof raw === 'object' ? raw : {};
-    const ad = src.urunAdi && typeof src.urunAdi === 'object' ? src.urunAdi : {};
     const d = CE_VARSAYILAN;
     // Yazılmamış alan varsayılanla gelir; silinen alan boş kalır
     const pick = (key) => (src[key] === undefined ? d[key] : clean(src[key]));
@@ -177,7 +176,6 @@
       model: pick('model'),
       imalYili: clean(src.imalYili),
       tarih: isoDate(src.tarih),
-      urunAdi: Object.fromEntries(CE_DILLER.map((l) => [l, ad[l] === undefined ? d.urunAdi[l] : clean(ad[l])])),
       marka: pick('marka'),
       lvdRapor: pick('lvdRapor'),
       riskRapor: pick('riskRapor'),

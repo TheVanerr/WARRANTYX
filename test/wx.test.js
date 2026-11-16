@@ -99,11 +99,11 @@ test('JSON dosyası Türkçe harfleri korur ve geri okunur', () => {
 /* ─── CE belgesi ────────────────────────────────────────── */
 
 test('CE belgesi: ürün bilgileri taranmış belgedeki gibi gelir, silinen alan boş kalır', () => {
-  const b = WxKayit.ceNormalize({ seriNo: ' 0226089 ', dil: 'tr', imza: '../x', marka: '' });
+  const b = WxKayit.ceNormalize({ seriNo: ' 0226089 ', dil: 'tr', imza: '../x', marka: '', urunAdi: { en: 'TURN TABLE PARTS WASHERS ™' } });
   assert.equal(b.seriNo, '0226089');
   assert.equal(b.dil, 'en', 'CE belgesi EN ya da DE');
   assert.equal(b.model, 'LYM 1350 NS');
-  assert.deepEqual(b.urunAdi, { en: 'TURN TABLE PARTS WASHERS ™', de: 'Drehteller-Unterlegscheiben ™' });
+  assert.equal(b.urunAdi, undefined, 'ürün adı belgede tutulmaz (eski kayıttaki de alınmaz): CE metninde sabit');
   assert.equal(b.lvdRapor, '62024041.001');
   assert.equal(b.riskRapor, 'RA62024041001');
   assert.equal(b.marka, '', 'silinen alan varsayılana dönmez');
@@ -227,6 +227,9 @@ test('CE metni EN ve DE dilinde aynı yapıda; standart açıklamaları belgedek
   assert.deepEqual(de.standartlar.map((s) => s.metin.length), [6, 4, 4, 3, 3]);
   assert.equal(en.beyan.length, 3);
   assert.equal(de.beyan.length, 4);
+  // Ürün adı her makinede aynı: tüm makineler endüstriyel parça yıkama makinesi
+  assert.equal(en.urun, 'Industrial Parts Washing Machine');
+  assert.equal(de.urun, 'Industrie-Teilereinigungsmaschine');
   for (const t of [en, de]) {
     for (const line of [...t.ust.flat(), ...t.beyan, ...t.standartlar.flatMap((s) => s.metin)]) {
       assert.ok(line && line === line.trim(), `satır boş ya da kenarında boşluk var: "${line}"`);

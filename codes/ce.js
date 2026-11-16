@@ -151,7 +151,7 @@ const WxCe = (() => {
     const ustSatirlar = t.ust.flatMap((p, i) => p.map((s, j) => line('ce-ust', d.ust.b[i][j], sag(d.ust.r), esc(s))));
 
     const tablo = [
-      [t.urunAdi, isaretli(b.urunAdi[id])],
+      [t.urunAdi, isaretli(t.urun)],
       [t.tipModel, `${isaretli(b.model)} | ${esc(t.seriNo)}: <span class="ce-alan">${esc(b.seriNo)}</span>`],
       [t.imalYili, esc(b.imalYili)],
       [t.marka, isaretli(b.marka)],

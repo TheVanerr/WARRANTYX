@@ -464,7 +464,7 @@
       <div class="empty-hero">
         <div>
           <h2>Henüz CE belgesi yok</h2>
-          <p>Seri numarasını ve tarihi yazın; EC uygunluk beyanı İngilizce ya da Almanca, taranmış belgedeki düzeniyle hazırlanır. Ürün bilgileri (TURN TABLE PARTS WASHERS, LYM 1350 NS, test raporları) hazır gelir, sol menüden değişir.</p>
+          <p>Seri numarasını ve tarihi yazın; EC uygunluk beyanı İngilizce ya da Almanca, taranmış belgedeki düzeniyle hazırlanır. Ürün adı her belgede aynıdır (Industrial Parts Washing Machine · Industrie-Teilereinigungsmaschine); model, marka ve test raporları hazır gelir, sol menüden değişir.</p>
           <p>Her yeni CE belgesine imzalardan biri rastgele gelir; bir önceki CE belgesindeki imza gelmez.</p>
           <div class="actions"><button type="button" class="btn btn-primary" data-new>+ İlk CE belgesini oluştur</button></div>
         </div>
@@ -581,7 +581,7 @@
       ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri ve ürün bilgileri kopyalanır. Tarih bugün olur, imza yeniden rastgele seçilir.</p>`
       : dolum
         ? `<p>"${esc(d.seriNo)}" seri numaralı garanti belgesinin model ve müşteri bilgisi geldi. Ürün bilgileri taranmış CE belgesindeki gibi gelir, belgeyi açınca sol menüden değişir.</p>`
-        : '<p>Ürün bilgileri taranmış CE belgesindeki gibi gelir (TURN TABLE PARTS WASHERS, test raporları); belgeyi açınca sol menüden değişir.</p>';
+        : '<p>Ürün bilgileri taranmış CE belgesindeki gibi gelir (model, marka, test raporları); belgeyi açınca sol menüden değişir.</p>';
     const imzaNotu = state.imzalar.size ? '' : '<div class="note" style="margin-top:0">Henüz imza yüklenmedi: belge şimdilik imzasız olur. CE Belgesi sekmesindeki <b>İmzalar</b> düğmesinden yükleyince belgeyi açtığınızda imza gelir.</div>';
     pencere(`
       <h2>${title}</h2>
@@ -673,8 +673,6 @@
     { key: 'tarih', label: 'Düzenleme Tarihi', type: 'date', half: true },
     { key: 'musteri', label: 'Alıcı Firma', ph: 'Firma adı', help: 'Belgede yazmaz; listede ve PDF dosya adında kullanılır' },
     { section: 'Ürün bilgileri', hint: 'taranmış belgedeki değerlerle gelir' },
-    { key: 'urunAdi.en', label: 'Ürün Adı (EN)', ph: 'TURN TABLE PARTS WASHERS ™' },
-    { key: 'urunAdi.de', label: 'Ürün Adı (DE)', ph: 'Drehteller-Unterlegscheiben ™' },
     { key: 'marka', label: 'Marka', ph: 'Dolfin®' },
     { key: 'lvdRapor', label: 'LVD Test Raporu No', ph: '62024041.001' },
     { key: 'riskRapor', label: 'Risk Değerlendirme Raporu No', ph: 'RA62024041001' }
