@@ -1,7 +1,7 @@
 /* WarrantyX kayıtları: garanti belgesi, CE uygunluk beyanı, imzalar ve ayarlar.
    Depoda düz dosya olarak durur: belgeler/<Seri No>.json, ce/<Seri No>.json, imzalar/<ad>.png ve ayarlar.json.
-   Belge yalnız makineye özgü bilgiyi tutar. Garanti süresi ve çalışma saati her belgede ayarlardan gelir
-   (1 yıl veya 2500 saat); kapak ve satıcı boş bırakılırsa ayarlardan gelir.
+   Belge yalnız makineye özgü bilgiyi tutar. Garanti süresi belgede seçilir (13 ay ya da 2 yıl), çalışma saati
+   ayarlardan gelir (2500 saat); kapak ve satıcı boş bırakılırsa ayarlardan gelir.
    CE belgesi imzasının adını taşır: oluşturulurken rastgele seçilir, bir önceki CE belgesinin imzası gelmez.
    Bu dosya tarayıcıya bağlı değildir; Node testleri aynı kodu çalıştırır. */
 
@@ -16,11 +16,21 @@
   const DILLER = ['tr', 'en', 'de'];
   // Tek kapak tasarımı var (Kırmızı Bant); eski kayıtlardaki başka değer buna düşer
   const KAPAKLAR = ['bant'];
-  const BOLUMLER = ['kapak', 'sartlar', 'belge', 'servis'];
+  const BOLUMLER = ['kapak', 'sartlar', 'belge'];
   const FIRMA_ALANLARI = ['unvan', 'adres', 'telefon', 'faks', 'eposta', 'web'];
 
+  /** Garanti süresi belgede seçilir; ilki varsayılandır. sartYil: şart metnindeki "… yıl veya 2500 (çalışma) saat" */
+  const GARANTI_SURELERI = Object.freeze({
+    '13ay': Object.freeze({ sayi: 13, birim: 'ay', sartYil: 1 }),
+    '2yil': Object.freeze({ sayi: 2, birim: 'yil', sartYil: 2 })
+  });
+  const GARANTI_VARSAYILAN = Object.keys(GARANTI_SURELERI)[0];
+
+  /** Ayarlar dosyasının biçimi. 2: imalatçı e-postası dolfin@dolfintr.com oldu (1'de boştu) */
+  const AYARLAR_SURUM = 2;
+
   const VARSAYILAN_AYARLAR = Object.freeze({
-    surum: 1,
+    surum: AYARLAR_SURUM,
     kapakTasarimi: 'bant',
     marka: 'DOLFIN',
     urunCinsi: {
@@ -28,7 +38,6 @@
       en: 'INDUSTRIAL PARTS WASHING MACHINE',
       de: 'INDUSTRIELLE TEILEREINIGUNGSMASCHINE'
     },
-    garantiYil: 1,
     garantiSaat: 2500,
     yedekParcaYil: 10,
     kullanimOmruYil: 10,
@@ -38,7 +47,7 @@
       adres: '1. Organize Sanayi Bölgesi Orhan Işık Bulvarı No:8 SİNCAN - ANKARA',
       telefon: '+90 312 267 30 15 (pbx)',
       faks: '+90 312 267 30 11',
-      eposta: '',
+      eposta: 'dolfin@dolfintr.com',
       web: 'www.dolfintr.com'
     }
   });
@@ -87,17 +96,19 @@
     const d = VARSAYILAN_AYARLAR;
     const cinsi = src.urunCinsi && typeof src.urunCinsi === 'object' ? src.urunCinsi : {};
     const pick = (key) => (src[key] === undefined ? d[key] : clean(src[key]));
+    const imalatci = firma(src.imalatci, d.imalatci);
+    // Eski ayarlardaki boş e-posta o zamanki varsayılandı (silinmiş değil): yeni varsayılanı alır
+    if ((Number(src.surum) || 1) < 2 && !imalatci.eposta) imalatci.eposta = d.imalatci.eposta;
     return {
-      surum: 1,
+      surum: AYARLAR_SURUM,
       kapakTasarimi: KAPAKLAR.includes(src.kapakTasarimi) ? src.kapakTasarimi : d.kapakTasarimi,
       marka: pick('marka') || d.marka,
       urunCinsi: Object.fromEntries(DILLER.map((l) => [l, cinsi[l] === undefined ? d.urunCinsi[l] : clean(cinsi[l])])),
-      garantiYil: positive(src.garantiYil) || d.garantiYil,
       garantiSaat: positive(src.garantiSaat) || d.garantiSaat,
       yedekParcaYil: positive(src.yedekParcaYil) || d.yedekParcaYil,
       kullanimOmruYil: positive(src.kullanimOmruYil) || d.kullanimOmruYil,
       onayTarihiSayisi: pick('onayTarihiSayisi'),
-      imalatci: firma(src.imalatci, d.imalatci)
+      imalatci
     };
   }
 
@@ -117,6 +128,7 @@
       model: clean(src.model),
       musteri: clean(src.musteri),
       teslimTarihi: isoDate(src.teslimTarihi),
+      garantiSuresi: GARANTI_SURELERI[src.garantiSuresi] ? src.garantiSuresi : GARANTI_VARSAYILAN,
       dil: DILLER.includes(src.dil) ? src.dil : 'tr',
       kapak: KAPAKLAR.includes(src.kapak) ? src.kapak : '',
       satici: Object.assign({ ayni: satici.ayni !== false }, firma(satici)),
@@ -126,7 +138,7 @@
     };
   }
 
-  /** Belge bu değerlerle basılır: garanti süresi ayarlardan, boş bırakılan kapak ve satıcı ayarlardan */
+  /** Belge bu değerlerle basılır: garanti süresi belgeden, çalışma saati ayarlardan, boş bırakılan kapak ve satıcı ayarlardan */
   function etkin(belge, ayarlar) {
     const b = belgeNormalize(belge);
     const a = ayarlariNormalize(ayarlar);
@@ -134,7 +146,7 @@
       belge: b,
       ayarlar: a,
       kapak: b.kapak || a.kapakTasarimi,
-      garantiYil: a.garantiYil,
+      garanti: GARANTI_SURELERI[b.garantiSuresi],
       garantiSaat: a.garantiSaat,
       yedekParcaYil: a.yedekParcaYil,
       kullanimOmruYil: a.kullanimOmruYil,
@@ -351,6 +363,7 @@
     CE_DILLER,
     KAPAKLAR,
     BOLUMLER,
+    GARANTI_SURELERI,
     VARSAYILAN_AYARLAR,
     CE_VARSAYILAN,
     bugun,

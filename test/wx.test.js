@@ -24,11 +24,12 @@ function device(hub) {
 /* ─── Kayıt modeli ──────────────────────────────────────── */
 
 test('boş belge geçerli varsayılanlarla gelir, bilinmeyen değerler düzeltilir', () => {
-  const b = WxKayit.belgeNormalize({ seriNo: '  0626051 ', dil: 'fr', kapak: 'yok', bolumler: { servis: false } });
+  const b = WxKayit.belgeNormalize({ seriNo: '  0626051 ', dil: 'fr', kapak: 'yok', garantiSuresi: '5yil', bolumler: { sartlar: false, servis: true } });
   assert.equal(b.seriNo, '0626051');
   assert.equal(b.dil, 'tr');
   assert.equal(b.kapak, '');
-  assert.deepEqual(b.bolumler, { kapak: true, sartlar: true, belge: true, servis: false });
+  assert.equal(b.garantiSuresi, '13ay', 'bilinmeyen garanti süresi 13 ay olur');
+  assert.deepEqual(b.bolumler, { kapak: true, sartlar: false, belge: true }, 'servis kayıt sayfası kaldırıldı');
   assert.equal(b.satici.ayni, true);
   assert.match(WxKayit.bosBelge().teslimTarihi, /^\d{4}-\d{2}-\d{2}$/);
 });
@@ -43,28 +44,31 @@ test('eski kayıttaki belge no, fatura no ve tarihi, teslim yeri, iç not ve bel
   }
 });
 
-test('garanti süresi ve çalışma saati her belgede ayarlardan gelir; boş kapak ve satıcı da', () => {
-  const a = WxKayit.ayarlariNormalize({ garantiYil: 2, kapakTasarimi: 'kose' });
+test('garanti süresi belgede seçilir (13 ay ya da 2 yıl); çalışma saati, boş kapak ve satıcı ayarlardan gelir', () => {
+  const a = WxKayit.ayarlariNormalize({ garantiYil: 3, kapakTasarimi: 'kose' });
   assert.equal(a.kapakTasarimi, 'bant', 'kaldırılan kapak tasarımı Kırmızı Bant olur');
+  assert.ok(!('garantiYil' in a), 'garanti süresi ayarlarda değil, belgede');
   let e = WxKayit.etkin({ seriNo: 'X' }, a);
-  assert.equal(e.garantiYil, 2);
+  assert.deepEqual(e.garanti, { sayi: 13, birim: 'ay', sartYil: 1 }, 'varsayılan 13 ay');
   assert.equal(e.garantiSaat, 2500);
   assert.equal(e.kapak, 'bant');
   assert.equal(e.satici.unvan, 'CNK ELEKTRONİK MAKİNE SANAYİ A.Ş.');
-  e = WxKayit.etkin({ seriNo: 'X', garantiYil: '3', garantiSaat: 4000, kapak: 'foto', satici: { ayni: false, unvan: 'BAYİ A.Ş.' } }, a);
+  assert.equal(e.satici.eposta, 'dolfin@dolfintr.com', 'satıcı imalatçıyla aynıyken e-posta dolfin@dolfintr.com');
+  e = WxKayit.etkin({ seriNo: 'X', garantiSuresi: '2yil', garantiYil: '3', garantiSaat: 4000, kapak: 'foto', satici: { ayni: false, unvan: 'BAYİ A.Ş.' } }, a);
   assert.equal(e.belge.kapak, '');
-  assert.equal(e.garantiYil, 2, 'eski belgedeki süre yok sayılır');
-  assert.equal(e.garantiSaat, 2500);
-  assert.equal(WxKayit.etkin({ seriNo: 'X' }, null).garantiYil, 1);
-  assert.equal(WxKayit.etkin({ seriNo: 'X' }, null).garantiSaat, 2500);
+  assert.deepEqual(e.garanti, { sayi: 2, birim: 'yil', sartYil: 2 });
+  assert.equal(e.garantiSaat, 2500, 'eski belgedeki çalışma saati yok sayılır');
   assert.equal(e.kapak, 'bant');
   assert.equal(e.satici.unvan, 'BAYİ A.Ş.');
   assert.equal(e.satici.adres, '');
 });
 
 test('ayarlarda silinen alan boş kalır, eksik alan varsayılanla dolar', () => {
-  const a = WxKayit.ayarlariNormalize({ imalatci: { faks: '' }, belgeNoOnek: 'GB', urunCinsi: { en: 'WASHER' } });
+  const a = WxKayit.ayarlariNormalize({ surum: 2, imalatci: { faks: '', eposta: '' }, belgeNoOnek: 'GB', urunCinsi: { en: 'WASHER' } });
   assert.equal(a.imalatci.faks, '');
+  assert.equal(a.imalatci.eposta, '', 'yeni ayarlarda silinen e-posta boş kalır');
+  assert.equal(WxKayit.ayarlariNormalize({ surum: 1, imalatci: { eposta: '' } }).imalatci.eposta, 'dolfin@dolfintr.com', 'eski ayarlardaki boş e-posta yeni varsayılanı alır');
+  assert.equal(WxKayit.ayarlariNormalize({ surum: 1, imalatci: { eposta: 'x@y.com' } }).imalatci.eposta, 'x@y.com');
   assert.equal(a.imalatci.telefon, '+90 312 267 30 15 (pbx)');
   assert.ok(!('belgeNoOnek' in a), 'belge no öneki kaldırıldı');
   assert.equal(a.urunCinsi.en, 'WASHER');
@@ -279,20 +283,28 @@ test('şart metinlerinde doldurulmamış yer tutucu kalmaz; yapı üç dilde ayn
     assert.deepEqual(shape(id), shape('tr'), id);
   }
   const tr = JSON.stringify(WxMetin.sartBloklari('tr', e));
-  assert.ok(tr.includes('1 yıl veya 2500 (çalışma) saattir'));
+  assert.ok(tr.includes('Garanti süresi fatura tarihinden itibaren başlar ve 1 yıl veya 2500 (çalışma) saattir. (Hangisi önce dolarsa)'), '13 ay: şartlarda 1 yıl');
+  const iki = JSON.stringify(WxMetin.sartBloklari('tr', WxKayit.etkin({ seriNo: 'X', garantiSuresi: '2yil' }, null)));
+  assert.ok(iki.includes('Garanti süresi fatura tarihinden itibaren başlar ve 2 yıl veya 2500 (çalışma) saattir. (Hangisi önce dolarsa)'), '2 yıl: şartlarda 2 yıl');
   assert.ok(tr.includes('<strong>10 yıllık yedek parça temin garantisine</strong>'));
 });
 
 test('İngilizce ve Almancada tekil ve çoğul doğru yazılır', () => {
-  const one = WxKayit.etkin({ seriNo: 'X' }, null);
-  const two = WxKayit.etkin({ seriNo: 'X' }, { garantiYil: 2 });
+  const one = WxKayit.etkin({ seriNo: 'X', garantiSuresi: '13ay' }, null);
+  const two = WxKayit.etkin({ seriNo: 'X', garantiSuresi: '2yil' }, null);
   assert.ok(JSON.stringify(WxMetin.sartBloklari('en', one)).includes('is 1 year or 2500'));
   assert.ok(JSON.stringify(WxMetin.sartBloklari('en', two)).includes('is 2 years or 2500'));
   assert.ok(JSON.stringify(WxMetin.sartBloklari('de', one)).includes('beträgt 1 Jahr oder'));
   assert.ok(JSON.stringify(WxMetin.sartBloklari('de', two)).includes('beträgt 2 Jahre oder'));
-  assert.deepEqual(WxMetin.dil('en').istatistik.garanti(2), ['YEARS', 'WARRANTY']);
-  assert.deepEqual(WxMetin.dil('de').istatistik.garanti(1), ['JAHR', 'GARANTIE']);
-  assert.equal(WxMetin.dil('de').sureDeger(1, 2500), '1 JAHR / 2500 STUNDEN');
+  assert.deepEqual(WxMetin.dil('en').istatistik.garanti(2, 'yil'), ['YEARS', 'WARRANTY']);
+  assert.deepEqual(WxMetin.dil('en').istatistik.garanti(13, 'ay'), ['MONTHS', 'WARRANTY']);
+  assert.deepEqual(WxMetin.dil('de').istatistik.garanti(13, 'ay'), ['MONATE', 'GARANTIE']);
+  assert.deepEqual(WxMetin.dil('tr').istatistik.garanti(13, 'ay'), ['AY', 'GARANTİ']);
+  // Kapakta ve belgede seçilen süre yazar
+  assert.equal(WxMetin.dil('tr').sureDeger(one.garanti, 2500), '13 AY / 2500 SAAT');
+  assert.equal(WxMetin.dil('tr').sureDeger(two.garanti, 2500), '2 YIL / 2500 SAAT');
+  assert.equal(WxMetin.dil('en').sureDeger(one.garanti, 2500), '13 MONTHS / 2500 HOURS');
+  assert.equal(WxMetin.dil('de').sureDeger(two.garanti, 2500), '2 JAHRE / 2500 STUNDEN');
 });
 
 test('Markdown: başlık, vurgulu kutu, madde ve kalın; HTML kaçırılır', () => {

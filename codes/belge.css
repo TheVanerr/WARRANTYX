@@ -154,7 +154,7 @@
 .wx-cert-approval span:first-child { color: var(--gray); }
 .wx-cert-approval-v { font-weight: 700; }
 .wx-cert-legal { font-size: 8.8pt; line-height: 1.45; color: var(--ink-2); }
-/* Uyarı bandı ve kaşe / imza kutuları sayfanın altına oturur, aradaki boşluk kaşeye kalır */
+/* Uyarı bandı sayfanın altına oturur */
 .wx-cert-alert {
   margin-top: auto;
   display: flex; align-items: center; gap: 12px; padding: 7px 12px; border-radius: 3px;
@@ -173,31 +173,3 @@
 .wx-v.wx-blank { min-width: 0; height: 14px; }
 .wx-cert-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .wx-cert-two .wx-kv { grid-template-columns: 38% minmax(0, 1fr); }
-/* İmalatçı ve satıcı: iki sütun, üstteki iki firma bölümüyle aynı hizada */
-.wx-cert-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 3px; }
-.wx-sign {
-  height: 168px; padding: 8px 10px 7px;
-  display: flex; flex-direction: column; justify-content: space-between;
-  border: 1px solid var(--line); border-top: 3px solid var(--ink);
-}
-.wx-sign > span { font-family: 'Segoe UI', sans-serif; font-size: 7.6pt; font-weight: 700; letter-spacing: 0.1em; color: var(--ink); }
-.wx-sign-foot { display: flex; justify-content: space-between; gap: 6px; }
-.wx-sign-foot em { font-style: normal; font-size: 8pt; color: #9aa1ad; }
-
-/* ─── Servis kayıt sayfası ─── */
-
-.wx-svc { display: flex; flex-direction: column; gap: 12px; }
-.wx-svc-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 9px 12px; background: #f5f6f8; }
-.wx-svc-meta span:first-child { display: block; font-size: 8.4pt; color: var(--gray); }
-.wx-svc-v { display: block; font-size: 10.5pt; font-weight: 700; min-height: 15px; }
-.wx-tbl { border: 1px solid var(--line); border-top: 0; border-bottom: 0; }
-.wx-tr { display: grid; grid-template-columns: 14% 15% minmax(0, 1fr) 14% 18%; height: 44px; border-bottom: 1px solid var(--line); }
-.wx-tr > span { padding: 5px 7px; border-left: 1px solid var(--line); font-size: 8.4pt; }
-.wx-tr > span:first-child { border-left: 0; }
-/* Başlık satırı belgenin kırmızısıyla: açık kırmızı zemin, kırmızı ortalı yazı */
-.wx-th { height: 38px; background: var(--acc-soft); border-top: 2px solid var(--acc); border-bottom: 2px solid var(--acc); }
-.wx-th > span {
-  display: flex; align-items: center; justify-content: center; text-align: center;
-  border-left-color: #f4c7c7; color: var(--acc);
-  font-family: 'Segoe UI', sans-serif; font-weight: 700; font-size: 8pt; line-height: 1.25; letter-spacing: 0.03em;
-}

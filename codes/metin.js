@@ -1,7 +1,8 @@
 /* Belge metinleri: garanti belgesi TR, EN, DE; CE uygunluk beyanı TR, EN, DE (dosyanın sonunda).
    Garanti şartları sade Markdown'dır; sayfalara bölme belge.js'te kendiliğinden yapılır.
      # Başlık   ## Ara başlık   > Vurgulu kutu   * Madde   **kalın**   {{yer tutucu}}
-   Yer tutucular ayarlardaki garanti süresi, çalışma saati, yedek parça ve kullanım ömrüyle dolar.
+   Yer tutucular belgede seçilen garanti süresiyle (13 ay → "1 yıl", 2 yıl → "2 yıl") ve ayarlardaki
+   çalışma saati, yedek parça ve kullanım ömrüyle dolar.
    TR ve DE metni eski garanti belgesinden alındı; EN metni bu ikisinden çevrildi.
    Bu dosya tarayıcıya bağlı değildir; Node testleri aynı kodu çalıştırır. */
 
@@ -53,7 +54,7 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
     kicker: 'ENDÜSTRİYEL PARÇA YIKAMA MAKİNELERİ',
     sayfa: (n, t) => `Sayfa ${n} / ${t}`,
     yer: (a) => ({
-      garantiYilMetin: `${sayi(a.garantiYil)} yıl`,
+      garantiYilMetin: `${sayi(a.garanti.sartYil)} yıl`,
       garantiSaat: sayi(a.garantiSaat),
       yedekParcaYil: sayi(a.yedekParcaYil),
       kullanimOmruYil: sayi(a.kullanimOmruYil)
@@ -69,7 +70,7 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
     },
     isaret: 'GARANTİ',
     istatistik: {
-      garanti: () => ['YIL', 'GARANTİ'],
+      garanti: (n, birim) => [birim === 'ay' ? 'AY' : 'YIL', 'GARANTİ'],
       saat: () => ['ÇALIŞMA', 'SAATİ'],
       yedek: () => ['YIL YEDEK', 'PARÇA TEMİNİ'],
       omur: () => ['YIL', 'KULLANIM ÖMRÜ']
@@ -78,7 +79,7 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
       muhurBirim: () => 'YIL',
       muhurAlt: 'GARANTİ'
     },
-    sureDeger: (y, s) => `${sayi(y)} YIL / ${sayi(s)} SAAT`,
+    sureDeger: (g, s) => `${sayi(g.sayi)} ${g.birim === 'ay' ? 'AY' : 'YIL'} / ${sayi(s)} SAAT`,
     belge: {
       baslik: 'GARANTİ BELGESİ',
       onay: 'Belge onay tarihi ve sayısı',
@@ -100,18 +101,7 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
       seriNo: 'Seri No',
       sure: 'Garanti Süresi',
       teslimTarihi: 'Teslim Tarihi',
-      alici: 'Alıcı',
-      kase: 'Kaşe / İmza',
-      tarih: 'Tarih'
-    },
-    servis: {
-      baslik: 'SERVİS VE BAKIM KAYITLARI',
-      aciklama: 'Garanti süresince yapılan her servis ve bakım işlemi bu tabloya işlenir ve yetkili servis tarafından imzalanır. Garanti talebinde bu sayfa da gösterilir.',
-      tarih: 'Tarih',
-      form: 'Servis Formu No',
-      islem: 'Yapılan İşlem / Arıza',
-      saat: 'Çalışma Saati',
-      imza: 'Teknisyen / İmza'
+      alici: 'Alıcı'
     }
   };
 
@@ -148,6 +138,7 @@ The customer is entitled to a full replacement of the product, a refund or a pri
 `;
 
   const years = (n) => `${sayi(n)} ${Number(n) === 1 ? 'year' : 'years'}`;
+  const EN_BIRIM = (n, birim) => `${birim === 'ay' ? 'MONTH' : 'YEAR'}${Number(n) === 1 ? '' : 'S'}`;
 
   const EN = {
     kod: 'EN',
@@ -157,7 +148,7 @@ The customer is entitled to a full replacement of the product, a refund or a pri
     kicker: 'INDUSTRIAL PARTS WASHING MACHINES',
     sayfa: (n, t) => `Page ${n} / ${t}`,
     yer: (a) => ({
-      garantiYilMetin: years(a.garantiYil),
+      garantiYilMetin: years(a.garanti.sartYil),
       garantiSaat: sayi(a.garantiSaat),
       yedekParcaYil: sayi(a.yedekParcaYil),
       kullanimOmruYilMetin: years(a.kullanimOmruYil)
@@ -173,7 +164,7 @@ The customer is entitled to a full replacement of the product, a refund or a pri
     },
     isaret: 'WARRANTY',
     istatistik: {
-      garanti: (n) => [Number(n) === 1 ? 'YEAR' : 'YEARS', 'WARRANTY'],
+      garanti: (n, birim) => [EN_BIRIM(n, birim), 'WARRANTY'],
       saat: () => ['OPERATING', 'HOURS'],
       yedek: (n) => [Number(n) === 1 ? 'YEAR OF' : 'YEARS OF', 'SPARE PARTS'],
       omur: (n) => [Number(n) === 1 ? 'YEAR' : 'YEARS', 'SERVICE LIFE']
@@ -182,7 +173,7 @@ The customer is entitled to a full replacement of the product, a refund or a pri
       muhurBirim: (y) => (Number(y) === 1 ? 'YEAR' : 'YEARS'),
       muhurAlt: 'WARRANTY'
     },
-    sureDeger: (y, s) => `${sayi(y)} ${Number(y) === 1 ? 'YEAR' : 'YEARS'} / ${sayi(s)} HOURS`,
+    sureDeger: (g, s) => `${sayi(g.sayi)} ${EN_BIRIM(g.sayi, g.birim)} / ${sayi(s)} HOURS`,
     belge: {
       baslik: 'WARRANTY CERTIFICATE',
       onay: 'Certificate approval date and number',
@@ -204,18 +195,7 @@ The customer is entitled to a full replacement of the product, a refund or a pri
       seriNo: 'Serial No',
       sure: 'Warranty Period',
       teslimTarihi: 'Delivery Date',
-      alici: 'Buyer',
-      kase: 'Stamp / Signature',
-      tarih: 'Date'
-    },
-    servis: {
-      baslik: 'SERVICE AND MAINTENANCE RECORD',
-      aciklama: 'Every service and maintenance operation carried out during the warranty period is entered in this table and signed by the authorized service. Present this page together with any warranty claim.',
-      tarih: 'Date',
-      form: 'Service Form No',
-      islem: 'Work Performed / Failure',
-      saat: 'Operating Hours',
-      imza: 'Technician / Signature'
+      alici: 'Buyer'
     }
   };
 
@@ -253,6 +233,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
 
   const jahre = (n) => `${sayi(n)} ${Number(n) === 1 ? 'Jahr' : 'Jahre'}`;
   const JAHRE = (n) => (Number(n) === 1 ? 'JAHR' : 'JAHRE');
+  const DE_BIRIM = (n, birim) => (birim === 'ay' ? (Number(n) === 1 ? 'MONAT' : 'MONATE') : JAHRE(n));
 
   const DE = {
     kod: 'DE',
@@ -262,7 +243,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
     kicker: 'INDUSTRIELLE TEILEREINIGUNGSMASCHINEN',
     sayfa: (n, t) => `Seite ${n} / ${t}`,
     yer: (a) => ({
-      garantiYilMetin: jahre(a.garantiYil),
+      garantiYilMetin: jahre(a.garanti.sartYil),
       garantiSaat: sayi(a.garantiSaat),
       yedekParcaYil: sayi(a.yedekParcaYil),
       kullanimOmruYilMetin: jahre(a.kullanimOmruYil)
@@ -278,7 +259,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
     },
     isaret: 'GARANTIE',
     istatistik: {
-      garanti: (n) => [JAHRE(n), 'GARANTIE'],
+      garanti: (n, birim) => [DE_BIRIM(n, birim), 'GARANTIE'],
       saat: () => ['BETRIEBS-', 'STUNDEN'],
       yedek: (n) => [JAHRE(n), 'ERSATZTEILE'],
       omur: (n) => [JAHRE(n), 'LEBENSDAUER']
@@ -287,7 +268,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
       muhurBirim: (y) => JAHRE(y),
       muhurAlt: 'GARANTIE'
     },
-    sureDeger: (y, s) => `${sayi(y)} ${JAHRE(y)} / ${sayi(s)} STUNDEN`,
+    sureDeger: (g, s) => `${sayi(g.sayi)} ${DE_BIRIM(g.sayi, g.birim)} / ${sayi(s)} STUNDEN`,
     belge: {
       baslik: 'GARANTIEZERTIFIKAT',
       onay: 'Datum und Nummer der Zertifikatsgenehmigung',
@@ -309,18 +290,7 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
       seriNo: 'Serien-Nr.',
       sure: 'Garantiezeit',
       teslimTarihi: 'Lieferdatum',
-      alici: 'Käufer',
-      kase: 'Stempel / Unterschrift',
-      tarih: 'Datum'
-    },
-    servis: {
-      baslik: 'SERVICE- UND WARTUNGSNACHWEIS',
-      aciklama: 'Jeder während der Garantiezeit durchgeführte Service- und Wartungseinsatz wird in diese Tabelle eingetragen und vom autorisierten Service unterschrieben. Legen Sie diese Seite bei jedem Garantieanspruch vor.',
-      tarih: 'Datum',
-      form: 'Serviceformular-Nr.',
-      islem: 'Durchgeführte Arbeit / Fehler',
-      saat: 'Betriebsstunden',
-      imza: 'Techniker / Unterschrift'
+      alici: 'Käufer'
     }
   };
 

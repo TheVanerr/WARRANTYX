@@ -295,3 +295,7 @@ body.in-editor .wx-chip { display: none; }
   .imza-uyari { margin-left: 16px; margin-right: 16px; flex-direction: column; align-items: flex-start; }
   .connect-form, .grid-3 { grid-template-columns: 1fr; }
 }
+
+/* Düzenleyicide seçim düğmeleri (garanti süresi): sol menünün genişliğinde, eşit iki düğme */
+.secim-seg { display: flex; }
+.secim-seg button { flex: 1; padding: 7px 10px; font-size: 12.5px; }

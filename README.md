@@ -56,11 +56,11 @@ Başka bir bilgisayarda yayındaki adresi açıp anahtarı girmek yeterlidir, be
 
 - **Yeni Garanti Belgesi:** Seri No ve makine modeli yeterlidir. Alıcı firma, teslim tarihi ve belge dili de burada seçilir. Belgeyi Seri No tanımlar, ayrıca belge numarası yoktur.
 - **Düzenleyici:** Solda bilgiler, ortada A4 önizleme, sağda bölümler. Her değişiklik kendiliğinden kaydedilir.
-- **Kapak (Kırmızı Bant)** P&ID kapak stüdyosunun dilindedir: solda tam boy kırmızı bant, içinde dikey dev GARANTİ yazısı ve seri no; harf aralıklı kırmızı üst başlık, ağır büyük model adı, kırmızı çizgi, alıcı firma; gri etiketli bilgi satırları (Seri No, Teslim Tarihi, Alıcı Firma, Garanti Süresi, Cinsi) ve büyük rakamlı garanti göstergeleri (1 YIL · 2500 SAAT · 10 YIL). Model yazılmamışsa başlık "GARANTİ BELGESİ" olur, uzun model adı kendiliğinden küçülür.
-- **Bölümler:** Kapak, garanti şartları, garanti belgesi (firma ve ürün bilgileri, imalatçı ve satıcı için kaşe / imza kutuları), servis kayıt sayfası. İstenmeyen bölüm kapatılır.
+- **Kapak (Kırmızı Bant)** P&ID kapak stüdyosunun dilindedir: solda tam boy kırmızı bant, içinde dikey dev GARANTİ yazısı ve seri no; harf aralıklı kırmızı üst başlık, ağır büyük model adı, kırmızı çizgi, alıcı firma; gri etiketli bilgi satırları (Seri No, Teslim Tarihi, Alıcı Firma, Garanti Süresi, Cinsi) ve büyük rakamlı garanti göstergeleri (13 AY ya da 2 YIL · 2500 SAAT · 10 YIL). Model yazılmamışsa başlık "GARANTİ BELGESİ" olur, uzun model adı kendiliğinden küçülür.
+- **Bölümler:** Kapak, garanti şartları, garanti belgesi (ürün, imalatçı ve satıcı bilgileri). İstenmeyen bölüm kapatılır. Belge sade tutuldu: kaşe / imza kutuları ve servis kayıt sayfası yoktur.
 - **Garanti şartları** metni olduğu gibi basılır, yalnız düzen eklenir: paragraf ve maddeler 1., 2., … diye numaralanır, ":" ile biten maddenin altındaki koşullar a), b), c) olur; numaralar ayrı sütunda hizalı, metin sola yaslıdır. Sayfalara kendiliğinden bölünür; başlık ve giriş maddesi sayfa sonunda yalnız kalmaz. Son sayfaya yalnız birkaç satır taşarsa metin biraz sıkılaştırılıp tek sayfaya alınır.
-- **Satıcı firma** varsayılan olarak imalatçıyla aynıdır. Farklıysa düğme kapatılıp satıcının bilgileri yazılır; boş alanlar elle doldurulacak çizgi olarak basılır.
-- **Garanti süresi ve çalışma saati** her belgeye kendiliğinden yazılır: 1 yıl veya 2500 (çalışma) saat, hangisi önce dolarsa. Değer belgede değil Ayarlar sekmesinde durur ve şart metnine de yazılır.
+- **Satıcı firma** varsayılan olarak imalatçıyla aynıdır (e-posta: dolfin@dolfintr.com, Ayarlar sekmesinde değişir). Farklıysa düğme kapatılıp satıcının bilgileri yazılır; boş alanlar elle doldurulacak çizgi olarak basılır.
+- **Garanti süresi** sol menüde seçilir: **13 Ay** (varsayılan) ya da **2 Yıl**. Kapakta ve garanti belgesinde seçilen süre yazar ("13 AY / 2500 SAAT", "2 YIL / 2500 SAAT"). Şartlardaki cümle 13 ayda "… 1 yıl veya 2500 (çalışma) saattir", 2 yılda "… 2 yıl veya 2500 (çalışma) saattir" olur. Çalışma saati (2500) Ayarlar sekmesinde durur.
 - **Fatura tarihi ve teslim yeri** garanti belgesinde yazmaz (eski belgelerde de yoktu). Eski kayıtlarda yazılı olanlar belge açılınca atılır; GitHub geçmişinde kalır.
 - **Benzer belge oluştur:** Aynı model ve müşteriye giden makinede model, müşteri, teslim tarihi ve satıcı bilgileri kopyalanır.
 - **Aynı makinenin CE belgesi:** Garanti belgesinin sağ panelinden açılır; yoksa seri no, model ve müşteri dolu olarak oluşturulur. CE belgesinden garanti belgesine de aynı yoldan geçilir.
@@ -99,7 +99,7 @@ PDF yazdırma penceresi olmadan doğrudan üretilir (P&ID motorundaki `pdf.js` /
 ```
 warrantyx-veri/
 ├── README.md               ilk bağlantıda program yazar
-├── ayarlar.json            firma bilgileri, garanti süresi, varsayılan kapak
+├── ayarlar.json            firma bilgileri, çalışma saati, varsayılan kapak
 ├── belgeler/
 │   └── 0626051.json        her garanti belgesi bir dosya, dosya adı = Seri No
 ├── ce/
@@ -122,7 +122,7 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 
 ## Metni ve firma bilgisini değiştirme
 
-- **Firma, ürün cinsi, garanti süresi ve çalışma saati, onay tarihi ve sayısı:** Ayarlar sekmesi.
+- **Firma, ürün cinsi, çalışma saati, yedek parça ve kullanım ömrü, onay tarihi ve sayısı:** Ayarlar sekmesi. Garanti süresi (13 ay ya da 2 yıl) her belgede sol menüden seçilir; seçeneklerin şart metnindeki yılı `codes/kayit.js` içinde (`GARANTI_SURELERI`).
 - **Garanti şartları ve belge yazıları:** `codes/metin.js`. Şartlar sade Markdown'dır (`#` başlık, `##` ara başlık, `>` vurgulu kutu, `*` madde, `**kalın**`, `{{yer tutucu}}`). Üç dilin yapısı aynı kalmalıdır; `npm test` denetler.
 - **CE belgesinin metni:** `codes/metin.js`, `CE_TR`, `CE_EN` ve `CE_DE`. Satır sonları belgedeki gibidir (dizinin her öğesi bir satır); bir cümle değişirse satırlar elle bölünür. Satırların yeri `codes/ce.js` içindeki ölçü tablosundadır (`ORTAK`, `DIL`: mm, taban çizgisi), yazı boyları aynı dosyada (`SINIF`), renk ve harf aralığı `codes/ce.css` içindedir. TR, EN'in satır yerlerini kullanır: TR metni değişirse her bölüm EN ile aynı satır sayısında kalmalıdır (`npm test` denetler).
 - **Logo, yazı tipi:** `assets/` altındaki dosyayı değiştirip `npm run gomulu` çalıştırın. Dosyadan açılan sayfa diskteki dosyayı programla okuyamadığı için görseller ve yazı tipleri `assets/gomulu-*.js` olarak programa gömülür.
@@ -133,7 +133,7 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 |---|---|
 | `index.html` | Program: ilk kurulum, garanti ve CE belgeleri, ayarlar, veritabanı, düzenleyici |
 | `codes/app.js` | Arayüz, kayıt, PDF akışı |
-| `codes/belge.js`, `codes/belge.css` | Belge motoru: 3 kapak, antetli sayfalar, sayfalama, garanti belgesi, servis sayfası |
+| `codes/belge.js`, `codes/belge.css` | Belge motoru: kapak, antetli sayfalar, sayfalama, garanti belgesi |
 | `codes/ce.js`, `codes/ce.css` | CE belgesi: taranmış belgenin düzeni (ölçü tablosu), CE işareti (vektör), imza |
 | `codes/metin.js` | Garanti belgesi ve CE belgesi TR, EN, DE metinleri |
 | `codes/kayit.js` | Belge ve ayar şeması, depo yolları, dosya adı |

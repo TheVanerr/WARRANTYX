@@ -18,8 +18,7 @@
   const BOLUM_ADLARI = {
     kapak: ['Kapak', 'Seçili kapak tasarımı'],
     sartlar: ['Garanti şartları', 'Sayfalara kendiliğinden bölünür'],
-    belge: ['Garanti belgesi', 'Firma ve ürün bilgileri, kaşe / imza'],
-    servis: ['Servis kayıt sayfası', 'Elle doldurulacak bakım tablosu']
+    belge: ['Garanti belgesi', 'Firma ve ürün bilgileri']
   };
 
   const state = {
@@ -397,7 +396,7 @@
       <div class="empty-hero">
         <div>
           <h2>Henüz garanti belgesi yok</h2>
-          <p>Seri numarası, model ve müşteriyi yazın; kapak, garanti şartları, garanti belgesi ve servis sayfası hazırlanır. Belgeyi Türkçe, İngilizce ya da Almanca görüp tek tıkla PDF alırsınız.</p>
+          <p>Seri numarası, model ve müşteriyi yazın; kapak, garanti şartları ve garanti belgesi hazırlanır. Belgeyi Türkçe, İngilizce ya da Almanca görüp tek tıkla PDF alırsınız.</p>
           <p>${where}</p>
           <div class="actions"><button type="button" class="btn btn-primary" data-new>+ İlk garanti belgesini oluştur</button></div>
         </div>
@@ -651,6 +650,14 @@
     { key: 'model', label: 'Makine Modeli', ph: 'ULT M200 3B' },
     { key: 'musteri', label: 'Alıcı Firma', ph: 'Firma adı' },
     { key: 'teslimTarihi', label: 'Teslim Tarihi', type: 'date' },
+    { section: 'Garanti' },
+    {
+      key: 'garantiSuresi',
+      label: 'Garanti Süresi',
+      type: 'secim',
+      secenekler: [['13ay', '13 Ay'], ['2yil', '2 Yıl']],
+      help: (v) => `Şartlarda: "${K.GARANTI_SURELERI[v].sartYil} yıl veya ${state.ayarlar.garantiSaat} (çalışma) saat"`
+    },
     { section: 'Satıcı Firma' },
     { key: 'satici.ayni', label: 'Satıcı, imalatçı firma ile aynı', type: 'switch' },
     { key: 'satici.unvan', label: 'Unvanı', seller: true },
@@ -683,6 +690,11 @@
     const attrs = `id="${id}" class="field-input" data-key="${f.key}"${ph !== undefined ? ` placeholder="${esc(ph)}"` : ''}`;
     if (f.type === 'switch') {
       return `<label class="switch-row${value ? ' is-on' : ''}"><span>${esc(f.label)}</span><input type="checkbox" data-key="${f.key}"${value ? ' checked' : ''}></label>`;
+    }
+    if (f.type === 'secim') {
+      const dugmeler = f.secenekler.map(([v, ad]) =>
+        `<button type="button" data-secim="${f.key}" data-deger="${v}" class="${v === value ? 'active' : ''}" aria-pressed="${v === value}">${esc(ad)}</button>`).join('');
+      return `<div class="field" data-alan="${f.key}"><span class="field-label">${esc(f.label)}</span><div class="lang-seg secim-seg" role="group" aria-label="${esc(f.label)}">${dugmeler}</div><span class="default-hint">${esc(f.help(value))}</span></div>`;
     }
     const control = f.type === 'textarea'
       ? `<textarea ${attrs} rows="2">${esc(value == null ? '' : value)}</textarea>`
@@ -986,6 +998,17 @@
   function editorOlaylari() {
     const form = $('edForm');
     form.addEventListener('submit', (e) => e.preventDefault());
+    // Seçim düğmeleri (garanti süresi): seçilen değer yazılır, alan yeniden çizilir
+    form.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-secim]');
+      if (!b || !state.acik) return;
+      const key = b.dataset.secim;
+      set(state.acik.belge, key, b.dataset.deger);
+      const f = acikForm().find((x) => x.key === key);
+      form.querySelector(`[data-alan="${key}"]`).outerHTML = alanHtml(f, state.acik.belge);
+      onizle();
+      kayitPlanla();
+    });
     form.addEventListener('input', (e) => {
       const key = e.target.dataset && e.target.dataset.key;
       if (!key || !state.acik || e.target.type === 'checkbox') return;
@@ -1435,8 +1458,7 @@
       { key: 'urunCinsi.en', label: 'Cinsi (EN)' },
       { key: 'urunCinsi.de', label: 'Cinsi (DE)' }
     ] },
-    { card: 'Garanti', hint: 'Her garanti belgesine ve şart metnine bu değerler yazılır', cols: 4, fields: [
-      { key: 'garantiYil', label: 'Garanti süresi (yıl)', type: 'number' },
+    { card: 'Garanti', hint: 'Her garanti belgesine ve şart metnine bu değerler yazılır; garanti süresi (13 ay ya da 2 yıl) belgede seçilir', cols: 3, fields: [
       { key: 'garantiSaat', label: 'Çalışma saati', type: 'number' },
       { key: 'yedekParcaYil', label: 'Yedek parça temini (yıl)', type: 'number' },
       { key: 'kullanimOmruYil', label: 'Kullanım ömrü (yıl)', type: 'number' }

@@ -1,4 +1,4 @@
-/* Belge motoru: kapak, garanti şartları, garanti belgesi ve servis kayıt sayfaları (A4 dikey).
+/* Belge motoru: kapak, garanti şartları ve garanti belgesi sayfaları (A4 dikey).
    Sayfalar .print-sheet öğesidir; ekranda önizleme, PDF'te pdf-dom.js aynı öğeleri ölçüp çizer.
    Şartların metni değişmez, yalnız düzen eklenir: paragraf ve maddeler sırayla numaralanır,
    ":" ile biten maddenin ardındaki koşullar a), b), c) olur. Taşan madde yeni sayfaya geçer,
@@ -58,7 +58,8 @@ const WxBelge = (() => {
   }
 
   const tarih = (iso) => WxKayit.tarihYaz(iso);
-  const sure = (c) => c.t.sureDeger(c.e.garantiYil, c.e.garantiSaat);
+  /** "13 AY / 2500 SAAT" ya da "2 YIL / 2500 SAAT": süre belgede seçilir */
+  const sure = (c) => c.t.sureDeger(c.e.garanti, c.e.garantiSaat);
 
   /* ─── Kapak: Kırmızı Bant ─────────────────────────────────
      P&ID kapak stüdyosunun dili: solda tam boy kırmızı bant, içinde dikey dev GARANTİ yazısı ve seri no;
@@ -80,11 +81,11 @@ const WxBelge = (() => {
   const satirlar = (rows) => `<div class="wx-cv-list">${rows.map(([label, value, strong]) =>
     `<div class="wx-cv-row"><span class="wx-cv-dt">${esc(label)}</span>${deger(value, strong ? 'wx-cv-dd strong' : 'wx-cv-dd')}</div>`).join('')}</div>`;
 
-  /** Garanti göstergeleri: büyük kırmızı sayı, altında iki satır etiket */
+  /** Garanti göstergeleri: büyük kırmızı sayı, altında iki satır etiket (13 AY · 2500 SAAT · 10 YIL) */
   function gostergeler(c) {
-    const items = [['garanti', c.e.garantiYil], ['saat', c.e.garantiSaat], ['yedek', c.e.yedekParcaYil]];
-    return `<div class="wx-cv-stats">${items.map(([key, value]) => {
-      const [a, b] = c.t.istatistik[key](value);
+    const items = [['garanti', c.e.garanti.sayi, c.e.garanti.birim], ['saat', c.e.garantiSaat], ['yedek', c.e.yedekParcaYil]];
+    return `<div class="wx-cv-stats">${items.map(([key, value, birim]) => {
+      const [a, b] = c.t.istatistik[key](value, birim);
       return `<div class="wx-cv-stat"><b>${esc(value)}</b><span>${esc(a)}<br>${esc(b)}</span></div>`;
     }).join('')}</div>`;
   }
@@ -257,7 +258,6 @@ const WxBelge = (() => {
   function belgeHtml(c) {
     const t = c.t.belge;
     const b = c.b;
-    const sign = (title) => `<div class="wx-sign"><span>${esc(title)}</span><div class="wx-sign-foot"><em>${esc(t.kase)}</em><em>${esc(t.tarih)}</em></div></div>`;
     return `
       <div class="wx-cert">
         <div class="wx-cert-head">
@@ -285,35 +285,6 @@ const WxBelge = (() => {
           <section class="wx-sec"><h2 class="wx-sec-title">${esc(t.satici)}</h2>${firmaRows(t, c.e.satici, true)}</section>
         </div>
         <div class="wx-cert-alert"><b>${esc(t.dikkat)}</b><span>${esc(t.dikkatMetin)}</span></div>
-        <div class="wx-cert-sign">
-          ${sign(t.imalatci)}
-          ${sign(t.satici)}
-        </div>
-      </div>`;
-  }
-
-  /* ─── Servis kayıt sayfası ────────────────────────────── */
-
-  const SERVIS_SATIR = 15;
-
-  function servisHtml(c) {
-    const t = c.t.servis;
-    const cells = (list) => list.map((v) => `<span>${esc(v)}</span>`).join('');
-    const empty = '<div class="wx-tr">' + '<span></span>'.repeat(5) + '</div>';
-    const meta = [
-      [c.t.kapak.seri, c.b.seriNo],
-      [c.t.kapak.model, c.b.model],
-      [c.t.kapak.teslim, tarih(c.b.teslimTarihi)]
-    ];
-    return `
-      <div class="wx-svc">
-        <h1 class="wx-h1">${esc(t.baslik)}</h1>
-        <p class="wx-p">${esc(t.aciklama)}</p>
-        <div class="wx-svc-meta">${meta.map(([l, v]) => `<div><span>${esc(l)}</span>${deger(v, 'wx-svc-v')}</div>`).join('')}</div>
-        <div class="wx-tbl">
-          <div class="wx-tr wx-th">${cells([t.tarih, t.form, t.islem, t.saat, t.imza])}</div>
-          ${empty.repeat(SERVIS_SATIR)}
-        </div>
       </div>`;
   }
 
@@ -322,7 +293,7 @@ const WxBelge = (() => {
   /**
    * Sayfaları host'a ekler; host düzende olmalı (şartlar ölçülerek bölünür).
    * Kapak numarasız, gerisi tek sırada numaralanır.
-   * @param bolumler { kapak, sartlar, belge, servis } — verilmezse belgedeki seçim
+   * @param bolumler { kapak, sartlar, belge } — verilmezse belgedeki seçim
    * @returns eklenen sayfalar
    */
   function olustur(host, belge, ayarlar, dil, bolumler) {
@@ -344,7 +315,6 @@ const WxBelge = (() => {
     };
     if (bol.sartlar) sartlar(c, inner, pages, yeni);
     if (bol.belge) yeni('wx-certificate').innerHTML = belgeHtml(c);
-    if (bol.servis) yeni('wx-service').innerHTML = servisHtml(c);
     inner.forEach((page, i) => {
       page.querySelector('.wx-pf-num').textContent = c.t.sayfa(i + 1, inner.length);
     });
