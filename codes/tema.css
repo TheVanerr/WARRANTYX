@@ -299,3 +299,11 @@ body.in-editor .wx-chip { display: none; }
 /* Düzenleyicide seçim düğmeleri (garanti süresi): sol menünün genişliğinde, eşit iki düğme */
 .secim-seg { display: flex; }
 .secim-seg button { flex: 1; padding: 7px 10px; font-size: 12.5px; }
+
+/* Silme onayı (GitHub'daki gibi): uyarı kutusu, yazılacak ifade, ifade tutunca açılan kırmızı düğme */
+.sil-uyari { padding: 9px 11px; border: 1px solid rgba(255, 0, 0, 0.35); border-radius: var(--radius); background: rgba(255, 0, 0, 0.08); color: #ffb3b3; font-size: 12.5px; line-height: 1.5; }
+.sil-uyari b { color: #fff; }
+.sil-ifade { padding: 1px 6px; border-radius: 4px; background: var(--panel-3); color: var(--text); font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12px; user-select: all; }
+.btn-sil { color: #ff8585; font-weight: 600; }
+.btn-sil:not(:disabled) { background: var(--dolfin-deep); border-color: var(--dolfin-deep); color: #fff; }
+.btn-sil:not(:disabled):hover { background: var(--dolfin); border-color: var(--dolfin); }

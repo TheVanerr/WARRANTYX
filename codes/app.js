@@ -980,12 +980,52 @@
     toast(`Seri No "${yeni}" oldu.`);
   }
 
+  /**
+   * GitHub'daki depo silme gibi: "<Seri No>/onaylıyorum" baştan sona yazılmadan silme düğmesi açılmaz.
+   * @returns onaylanırsa true
+   */
+  function silmeOnayi(tur, belge) {
+    const T = TUR[tur];
+    const github = WxBoot.settings().mode === 'github';
+    const ifade = K.silmeOnayMetni(belge.seriNo);
+    const ozet = [belge.model, belge.musteri].filter(Boolean).join(' · ');
+    return new Promise((resolve) => {
+      let answer = false;
+      pencere(`
+        <h2>Belgeyi sil</h2>
+        <div class="sil-uyari"><b>"${esc(belge.seriNo)}"</b> seri numaralı ${esc(T.ad)} silinecek${ozet ? ` (${esc(ozet)})` : ''}. ${github ? 'Depodaki son hâli GitHub geçmişinde kalır.' : 'Yerel moddasınız: silinen belge geri gelmez, gerekirse önce yedek indirin.'}</div>
+        <div class="field">
+          <label for="silOnay">Onaylamak için aşağıya <span class="sil-ifade">${esc(ifade)}</span> yazın</label>
+          <input id="silOnay" class="field-input" name="onay" autocomplete="off" spellcheck="false" placeholder="${esc(ifade)}">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-close>Vazgeç</button>
+          <button type="submit" class="btn btn-sil" disabled>Bu belgeyi sil</button>
+        </div>`, {
+        onOpen: (form) => {
+          const input = form.elements.onay;
+          input.addEventListener('input', () => {
+            form.querySelector('[type=submit]').disabled = !K.silmeOnaylandi(belge.seriNo, input.value);
+          });
+        },
+        onSubmit: (form) => {
+          if (!K.silmeOnaylandi(belge.seriNo, form.elements.onay.value)) {
+            // Pencere gönderimden sonra düğmeyi açar: ifade tutmuyorsa yeniden kapatılır
+            setTimeout(() => { form.querySelector('[type=submit]').disabled = true; });
+            return false;
+          }
+          answer = true;
+          return true;
+        },
+        onClose: () => resolve(answer)
+      });
+    });
+  }
+
   async function belgeSil() {
     const { tur, path, belge } = state.acik;
     const T = TUR[tur];
-    const github = WxBoot.settings().mode === 'github';
-    const ok = await onayla('Belgeyi sil', `"${belge.seriNo}" seri numaralı ${T.ad} silinsin mi? ${github ? 'Depodaki eski sürüm GitHub geçmişinde kalır.' : 'Yerel modda geri alınamaz; gerekirse önce yedek indirin.'}`, 'Sil');
-    if (!ok) return;
+    if (!(await silmeOnayi(tur, belge))) return;
     clearTimeout(state.saveTimer);
     state.acikDirty = false;
     await state.db.remove(path);

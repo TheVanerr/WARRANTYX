@@ -320,6 +320,10 @@
     return '';
   }
 
+  /** Silme onayı (GitHub'daki depo silme gibi): seri no ve "/onaylıyorum" baştan sona aynen yazılır */
+  const silmeOnayMetni = (seri) => `${clean(seri)}/onaylıyorum`;
+  const silmeOnaylandi = (seri, yazilan) => !!clean(seri) && text(yazilan).trim() === silmeOnayMetni(seri);
+
   const belgeYolu = (seri) => `${BELGE_DIR}/${dosyaAdi(seri)}.json`;
 
   /** Çakışma kopyaları (.catisma-…) ve alt klasörler belge sayılmaz */
@@ -385,6 +389,8 @@
     pngBilgi,
     dosyaAdi,
     seriHatasi,
+    silmeOnayMetni,
+    silmeOnaylandi,
     belgeYolu,
     belgeYoluMu,
     ceYolu,

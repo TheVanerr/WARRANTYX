@@ -64,6 +64,7 @@ Başka bir bilgisayarda yayındaki adresi açıp anahtarı girmek yeterlidir, be
 - **Fatura tarihi ve teslim yeri** garanti belgesinde yazmaz (eski belgelerde de yoktu). Eski kayıtlarda yazılı olanlar belge açılınca atılır; GitHub geçmişinde kalır.
 - **Benzer belge oluştur:** Aynı model ve müşteriye giden makinede model, müşteri, teslim tarihi ve satıcı bilgileri kopyalanır.
 - **Aynı makinenin CE belgesi:** Garanti belgesinin sağ panelinden açılır; yoksa seri no, model ve müşteri dolu olarak oluşturulur. CE belgesinden garanti belgesine de aynı yoldan geçilir.
+- **Belgeyi silme** GitHub'daki depo silme gibidir: **Belgeyi sil** önce bir onay penceresi açar. Kutuya seri no ve `/onaylıyorum` baştan sona aynen yazılmadan (ör. `0626051/onaylıyorum`) **Bu belgeyi sil** düğmesi açılmaz. Garanti ve CE belgesinde aynıdır.
 - **Kısayollar:** Ctrl+S depoya hemen gönderir, Ctrl+P PDF penceresini açar.
 
 ## CE belgesi

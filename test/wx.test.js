@@ -88,6 +88,16 @@ test('seri no dosya adı olur; sorunlu karakterler atılır, çakışma kopyası
   assert.ok(!WxKayit.belgeYoluMu('ayarlar.json'));
 });
 
+test('silme onayı GitHub gibi: seri no ve /onaylıyorum baştan sona aynen yazılmalı', () => {
+  assert.equal(WxKayit.silmeOnayMetni(' 0626051 '), '0626051/onaylıyorum');
+  assert.ok(WxKayit.silmeOnaylandi('0626051', '0626051/onaylıyorum'));
+  assert.ok(WxKayit.silmeOnaylandi('0626051', '  0626051/onaylıyorum '), 'baştaki ve sondaki boşluk sayılmaz');
+  for (const yanlis of ['', '0626051', 'onaylıyorum', '0626051/onaylıyoru', '0626051/onayliyorum', '0626051/ONAYLIYORUM', '0626052/onaylıyorum', '0626051 /onaylıyorum', 'x0626051/onaylıyorum']) {
+    assert.ok(!WxKayit.silmeOnaylandi('0626051', yanlis), `"${yanlis}" silmeyi açmamalı`);
+  }
+  assert.ok(!WxKayit.silmeOnaylandi('', '/onaylıyorum'), 'seri no boşsa silme açılmaz');
+});
+
 test('PDF dosya adı eski programdaki gibi: seri-müşteri-model başlık', () => {
   const b = { seriNo: '0626051', musteri: 'DÜNYA', model: 'ULT M200 3B' };
   assert.equal(WxKayit.pdfDosyaAdi(b, 'GARANTİ BELGESİ'), '0626051-DÜNYA-ULT M200 3B GARANTİ BELGESİ.pdf');
