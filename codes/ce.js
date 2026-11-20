@@ -1,5 +1,6 @@
-/* CE uygunluk beyanı: tek A4 sayfa, EN ve DE. Taranmış CE belgesinin düzeni olduğu gibi kurulur.
+/* CE uygunluk beyanı: tek A4 sayfa, TR, EN ve DE. Taranmış CE belgesinin düzeni olduğu gibi kurulur.
    Her satırın yeri belgeden ölçüldü (mm, taban çizgisi): satırlar kendi taban çizgisine oturur, akışa bağlı değildir.
+   TR belgesinin taraması yok: EN belgesinin ölçülerini kullanır (TR metni EN ile aynı satır sayısındadır).
    Değişen yerler: ürün bilgileri, seri no, imal yılı, düzenleme tarihi ve imza (belgenin kendi imzası).
    İmza görselleri özel veri deposundan gelir (imzalar/<ad>.png); programın açık deposunda imza yoktur.
    Sayfalar .print-sheet öğesidir; ekranda önizleme, PDF'te pdf-dom.js aynı öğeleri ölçüp çizer.
@@ -75,12 +76,14 @@ const WxCe = (() => {
       alt: 265.09
     }
   };
+  // TR belgesinin taraması yok: satırlar EN belgesindeki yerlerine oturur
+  DIL.tr = DIL.en;
 
   /* ─── Yazı ölçüleri (pt) ──────────────────────────────────
      Sınıf → yazı ailesi, boy ve satır aralığı. Renk ve harf aralığı ce.css'te. */
   const SINIF = {
-    'ce-ust': { yazi: 'din', boy: { en: 7.4, de: 6.32 } },
-    'ce-baslik': { yazi: 'serif', boy: { en: 20, de: 21.1 } },
+    'ce-ust': { yazi: 'din', boy: { tr: 7.4, en: 7.4, de: 6.32 } },
+    'ce-baslik': { yazi: 'serif', boy: { tr: 20, en: 20, de: 21.1 } },
     'ce-etiket': { yazi: 'din', boy: 6.2 },
     'ce-firma': { yazi: 'serif', boy: 16 },
     'ce-adres': { yazi: 'din', boy: 8 },

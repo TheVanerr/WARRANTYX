@@ -117,8 +117,6 @@
       model: clean(src.model),
       musteri: clean(src.musteri),
       teslimTarihi: isoDate(src.teslimTarihi),
-      teslimYeri: clean(src.teslimYeri),
-      faturaTarihi: isoDate(src.faturaTarihi),
       dil: DILLER.includes(src.dil) ? src.dil : 'tr',
       kapak: KAPAKLAR.includes(src.kapak) ? src.kapak : '',
       satici: Object.assign({ ayni: satici.ayni !== false }, firma(satici)),
@@ -148,7 +146,7 @@
   /* ─── CE uygunluk beyanı ──────────────────────────────── */
 
   const CE_DIR = 'ce';
-  const CE_DILLER = ['en', 'de'];
+  const CE_DILLER = ['tr', 'en', 'de'];
   /* İmzalar programın açık deposunda değil, özel veri deposunda durur: imzalar/<ad>.png.
      Belge imzanın adını taşır (ör. "imza-07"). */
   const IMZA_DIR = 'imzalar';

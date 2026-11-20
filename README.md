@@ -1,6 +1,6 @@
 # WarrantyX
 
-Dolfin endüstriyel parça yıkama makineleri için garanti belgesi ve CE uygunluk beyanı programı. Garanti belgesi Türkçe, İngilizce ya da Almanca; CE belgesi İngilizce ya da Almanca hazırlanır, tek tıkla vektörel PDF alınır. Veritabanı özel bir GitHub deposudur (`warrantyx-veri`): ücretsizdir, sunucu ve kurulum gerektirmez, her kayıt geçmişte durur.
+Dolfin endüstriyel parça yıkama makineleri için garanti belgesi ve CE uygunluk beyanı programı. Garanti belgesi ve CE belgesi Türkçe, İngilizce ya da Almanca hazırlanır, tek tıkla vektörel PDF alınır. Veritabanı özel bir GitHub deposudur (`warrantyx-veri`): ücretsizdir, sunucu ve kurulum gerektirmez, her kayıt geçmişte durur.
 
 ## Başlatma
 
@@ -60,21 +60,23 @@ Başka bir bilgisayarda yayındaki adresi açıp anahtarı girmek yeterlidir, be
 - **Bölümler:** Kapak, garanti şartları, garanti belgesi (firma ve ürün bilgileri, imalatçı ve satıcı için kaşe / imza kutuları), servis kayıt sayfası. İstenmeyen bölüm kapatılır.
 - **Garanti şartları** metni olduğu gibi basılır, yalnız düzen eklenir: paragraf ve maddeler 1., 2., … diye numaralanır, ":" ile biten maddenin altındaki koşullar a), b), c) olur; numaralar ayrı sütunda hizalı, metin sola yaslıdır. Sayfalara kendiliğinden bölünür; başlık ve giriş maddesi sayfa sonunda yalnız kalmaz. Son sayfaya yalnız birkaç satır taşarsa metin biraz sıkılaştırılıp tek sayfaya alınır.
 - **Satıcı firma** varsayılan olarak imalatçıyla aynıdır. Farklıysa düğme kapatılıp satıcının bilgileri yazılır; boş alanlar elle doldurulacak çizgi olarak basılır.
-- **Garanti süresi ve çalışma saati** her belgeye kendiliğinden yazılır: 1 yıl veya 2500 (çalışma) saat, hangisi önce dolarsa. Değer belgede değil Ayarlar sekmesinde durur ve şart metnine de yazılır. Garanti süresi fatura tarihinden başlar; Fatura Tarihi boş bırakılırsa belgede elle doldurulacak çizgi olarak basılır.
-- **Benzer belge oluştur:** Aynı model ve müşteriye giden makinede model, müşteri, teslim ve satıcı bilgileri kopyalanır, fatura tarihi boş gelir.
+- **Garanti süresi ve çalışma saati** her belgeye kendiliğinden yazılır: 1 yıl veya 2500 (çalışma) saat, hangisi önce dolarsa. Değer belgede değil Ayarlar sekmesinde durur ve şart metnine de yazılır.
+- **Fatura tarihi ve teslim yeri** garanti belgesinde yazmaz (eski belgelerde de yoktu). Eski kayıtlarda yazılı olanlar belge açılınca atılır; GitHub geçmişinde kalır.
+- **Benzer belge oluştur:** Aynı model ve müşteriye giden makinede model, müşteri, teslim tarihi ve satıcı bilgileri kopyalanır.
 - **Aynı makinenin CE belgesi:** Garanti belgesinin sağ panelinden açılır; yoksa seri no, model ve müşteri dolu olarak oluşturulur. CE belgesinden garanti belgesine de aynı yoldan geçilir.
 - **Kısayollar:** Ctrl+S depoya hemen gönderir, Ctrl+P PDF penceresini açar.
 
 ## CE belgesi
 
-**CE Belgesi** sekmesi EC / EG uygunluk beyanlarını tutar (EN: *EC Declaration of Conformity*, DE: *EG-Konformitätserklärung*). Düzenleyici garanti belgesindekiyle aynıdır: solda bilgiler, ortada A4 önizleme, sağda imza ve belge işlemleri.
+**CE Belgesi** sekmesi AT / EC / EG uygunluk beyanlarını tutar (TR: *AT Uygunluk Beyanı*, EN: *EC Declaration of Conformity*, DE: *EG-Konformitätserklärung*). Düzenleyici garanti belgesindekiyle aynıdır: solda bilgiler, ortada A4 önizleme, sağda imza ve belge işlemleri.
 
 - **Belgenin düzeni taranmış CE belgesinin aynısıdır.** Her satır taramadan ölçülen yerine oturur (mm, taban çizgisi); başlıklar, ürün tablosu, kriterler, beş standart ve açıklamaları, CE işareti, beyan, imza satırı ve alt bilgi aynı yerde, aynı satır sonlarıyla basılır. Metinler harfi harfine alındı (`codes/metin.js`, `CE_EN` ve `CE_DE`); satır sonları da orada, dizinin her öğesi bir satırdır.
+- **TR belgesinin taraması yoktur:** metin EN belgesinden çevrildi (`CE_TR`) ve EN belgesinin düzenine oturur. Her bölüm EN ile aynı satır sayısındadır, hiçbir satır EN'in en uzun satırını geçmez; bu yüzden satırlar EN belgesindeki yerlerine basılır. Kriter ve standart numaraları EN'deki gibi kalır (2006/42/EC, EN 60204-1:2018 …).
 - **Sol menü:** Seri No, Makine Modeli, İmal Yılı, Düzenleme Tarihi (Issue Date / Ausstellungsdatum), Alıcı Firma (belgede yazmaz, listede ve PDF dosya adında kullanılır), Marka, LVD ve risk değerlendirme rapor numaraları. Ürün bilgileri taranmış belgedeki değerlerle gelir (LYM 1350 NS, Dolfin®, LVD- 62024041.001, RA62024041001). Seri no ve tarih şablonda boştur, belgeye yazılır.
-- **Ürün adı** her CE belgesinde aynıdır, sol menüde yoktur: *Industrial Parts Washing Machine* (EN), *Industrie-Teilereinigungsmaschine* (DE). Tüm makineler endüstriyel parça yıkama makinesidir; ad `codes/metin.js` içinde (`urun`) değişir.
+- **Ürün adı** her CE belgesinde aynıdır, sol menüde yoktur: *Endüstriyel Parça Yıkama Makinesi* (TR), *Industrial Parts Washing Machine* (EN), *Industrie-Teilereinigungsmaschine* (DE). Tüm makineler endüstriyel parça yıkama makinesidir; ad `codes/metin.js` içinde (`urun`) değişir.
 - **Yazı tipleri:** Orijinaldeki Aptos yerine ölçüleri aynı Selawik (Segoe UI), Cambria yerine ölçüleri aynı Caladea, Bahnschrift (DIN) yerine Barlow Semi Condensed. Üçü de açık lisanslıdır (OFL) ve PDF'e gömülür. Microsoft'un yazı tipleri depoya konamaz: depo herkese açıktır.
 - **İmza:** Her yeni CE belgesine imzalardan biri rastgele gelir; **bir önceki CE belgesindeki imza gelmez** (bir önceki: en son oluşturulan CE belgesi, silinmişse ondan öncekisi). İmza belgede kalır, PDF her alındığında aynıdır. Sağ paneldeki **Başka imza** rastgele yenisini seçer; bir önceki ve bir sonraki CE belgesindeki imza gelmez.
-- **PDF:** EN, DE ya da ikisi tek dosyada. Dosya adı eski CE dosyalarının düzenindedir: `0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf`.
+- **PDF:** TR, EN, DE ya da birkaçı tek dosyada (TR, EN, DE sırasıyla). Dosya adı eski CE dosyalarının düzenindedir: `0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf`, üç dilde `(TR-EN-DEU)`.
 
 ### İmzalar
 
@@ -122,7 +124,7 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 
 - **Firma, ürün cinsi, garanti süresi ve çalışma saati, onay tarihi ve sayısı:** Ayarlar sekmesi.
 - **Garanti şartları ve belge yazıları:** `codes/metin.js`. Şartlar sade Markdown'dır (`#` başlık, `##` ara başlık, `>` vurgulu kutu, `*` madde, `**kalın**`, `{{yer tutucu}}`). Üç dilin yapısı aynı kalmalıdır; `npm test` denetler.
-- **CE belgesinin metni:** `codes/metin.js`, `CE_EN` ve `CE_DE`. Satır sonları belgedeki gibidir (dizinin her öğesi bir satır); bir cümle değişirse satırlar elle bölünür. Satırların yeri `codes/ce.js` içindeki ölçü tablosundadır (`ORTAK`, `DIL`: mm, taban çizgisi), yazı boyları aynı dosyada (`SINIF`), renk ve harf aralığı `codes/ce.css` içindedir.
+- **CE belgesinin metni:** `codes/metin.js`, `CE_TR`, `CE_EN` ve `CE_DE`. Satır sonları belgedeki gibidir (dizinin her öğesi bir satır); bir cümle değişirse satırlar elle bölünür. Satırların yeri `codes/ce.js` içindeki ölçü tablosundadır (`ORTAK`, `DIL`: mm, taban çizgisi), yazı boyları aynı dosyada (`SINIF`), renk ve harf aralığı `codes/ce.css` içindedir. TR, EN'in satır yerlerini kullanır: TR metni değişirse her bölüm EN ile aynı satır sayısında kalmalıdır (`npm test` denetler).
 - **Logo, yazı tipi:** `assets/` altındaki dosyayı değiştirip `npm run gomulu` çalıştırın. Dosyadan açılan sayfa diskteki dosyayı programla okuyamadığı için görseller ve yazı tipleri `assets/gomulu-*.js` olarak programa gömülür.
 
 ## Klasörler
@@ -133,7 +135,7 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 | `codes/app.js` | Arayüz, kayıt, PDF akışı |
 | `codes/belge.js`, `codes/belge.css` | Belge motoru: 3 kapak, antetli sayfalar, sayfalama, garanti belgesi, servis sayfası |
 | `codes/ce.js`, `codes/ce.css` | CE belgesi: taranmış belgenin düzeni (ölçü tablosu), CE işareti (vektör), imza |
-| `codes/metin.js` | Garanti belgesi TR, EN, DE; CE belgesi EN, DE metinleri |
+| `codes/metin.js` | Garanti belgesi ve CE belgesi TR, EN, DE metinleri |
 | `codes/kayit.js` | Belge ve ayar şeması, depo yolları, dosya adı |
 | `codes/pdf.js`, `codes/pdf-dom.js` | Vektörel PDF motoru (P&ID'den; JPEG görsel ve `object-fit: cover` eki, ileride fotoğraf için) |
 | `codes/tema.css` | Arayüz teması (koyu tema, Dolfin kırmızısı) |
@@ -162,4 +164,4 @@ Seri No değişince dosya da yeni adla yazılır, eskisi silinir. Eski sürümle
 npm test
 ```
 
-Kayıt modeli, üç dilin metin yapısı, boş `warrantyx-veri` deposuna ilk yazma, iki bilgisayar arası eşitleme, PDF'e JPEG gömme, yayın sitesinin hazırlanması (içerik özetleri, her dosyanın sitede olması, `sw.js` dosya listesi) ve manifest simgeleri denenir. CE belgesi için: kayıt biçimi ve depo yolu, PDF dosya adı, EN ve DE metninin yapısı ve satır sayıları, imza kuralı (2000 belgede art arda aynı imza yok, her imza kullanılır, "Başka imza" komşu belgelerinkini vermez), imza PNG'sinin iki bilgisayar arasında bozulmadan taşınması ve imzaların yayındaki siteye girmemesi.
+Kayıt modeli, üç dilin metin yapısı, boş `warrantyx-veri` deposuna ilk yazma, iki bilgisayar arası eşitleme, PDF'e JPEG gömme, yayın sitesinin hazırlanması (içerik özetleri, her dosyanın sitede olması, `sw.js` dosya listesi) ve manifest simgeleri denenir. CE belgesi için: kayıt biçimi ve depo yolu, PDF dosya adı, TR, EN ve DE metninin yapısı ve satır sayıları (TR'de EN ile aynı), imza kuralı (2000 belgede art arda aynı imza yok, her imza kullanılır, "Başka imza" komşu belgelerinkini vermez), imza PNG'sinin iki bilgisayar arasında bozulmadan taşınması ve imzaların yayındaki siteye girmemesi.

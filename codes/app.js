@@ -502,7 +502,7 @@
     let dil = base.dil || 'tr';
     const title = kaynak ? 'Benzer garanti belgesi' : 'Yeni garanti belgesi';
     const intro = kaynak
-      ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri, teslim ve satıcı bilgileri kopyalanır. Fatura tarihi boş gelir.</p>`
+      ? `<p>"${esc(kaynak.seriNo)}" belgesinin model, müşteri, teslim ve satıcı bilgileri kopyalanır.</p>`
       : dolum
         ? `<p>"${esc(d.seriNo)}" seri numaralı CE belgesinin model ve müşteri bilgisi geldi. Diğer bilgileri belgeyi açınca tamamlayabilirsiniz.</p>`
         : '<p>Diğer bilgileri belgeyi açınca tamamlayabilirsiniz.</p>';
@@ -548,7 +548,6 @@
           musteri: v('musteri'),
           teslimTarihi: v('teslimTarihi'),
           dil,
-          faturaTarihi: kaynak ? '' : base.faturaTarihi,
           olusturma: now,
           guncelleme: now
         }));
@@ -651,10 +650,7 @@
     { key: 'seriNo', label: 'Seri No', ph: '0626051', help: 'Depoda dosya adı olur: belgeler/<Seri No>.json' },
     { key: 'model', label: 'Makine Modeli', ph: 'ULT M200 3B' },
     { key: 'musteri', label: 'Alıcı Firma', ph: 'Firma adı' },
-    { section: 'Teslim ve Fatura' },
-    { key: 'teslimTarihi', label: 'Teslim Tarihi', type: 'date', half: true },
-    { key: 'teslimYeri', label: 'Teslim Yeri', ph: 'Ankara', half: true },
-    { key: 'faturaTarihi', label: 'Fatura Tarihi', type: 'date', help: 'Garanti süresi bu tarihten başlar' },
+    { key: 'teslimTarihi', label: 'Teslim Tarihi', type: 'date' },
     { section: 'Satıcı Firma' },
     { key: 'satici.ayni', label: 'Satıcı, imalatçı firma ile aynı', type: 'switch' },
     { key: 'satici.unvan', label: 'Unvanı', seller: true },
@@ -667,8 +663,8 @@
   /** CE belgesi: değişen alanlar. Ürün bilgileri taranmış belgedeki değerlerle gelir. */
   const CE_FORM = [
     { section: 'Makine' },
-    { key: 'seriNo', label: 'Seri No', ph: '0226089', help: 'Belgede "Serial Number / Seriennummer". Depoda dosya adı olur: ce/<Seri No>.json' },
-    { key: 'model', label: 'Makine Modeli', ph: 'LYM 1350 NS', help: 'Type / Model · Typ / Modell' },
+    { key: 'seriNo', label: 'Seri No', ph: '0226089', help: 'Belgede "Seri Numarası / Serial Number / Seriennummer". Depoda dosya adı olur: ce/<Seri No>.json' },
+    { key: 'model', label: 'Makine Modeli', ph: 'LYM 1350 NS', help: 'Tip / Model · Type / Model · Typ / Modell' },
     { key: 'imalYili', label: 'İmal Yılı', ph: '2026', half: true },
     { key: 'tarih', label: 'Düzenleme Tarihi', type: 'date', half: true },
     { key: 'musteri', label: 'Alıcı Firma', ph: 'Firma adı', help: 'Belgede yazmaz; listede ve PDF dosya adında kullanılır' },
@@ -1102,7 +1098,7 @@
    * Belgeyi vektörel PDF'e çevirir. Her dil tam belge olarak TR, EN, DE sırasıyla arka arkaya eklenir.
    * @returns { bytes, pages, missing, failedImages, name }
    */
-  /** Seçili diller belge türünün sırasıyla: garanti TR, EN, DE; CE EN, DE */
+  /** Seçili diller belge türünün sırasıyla: garanti ve CE belgesinde TR, EN, DE */
   const dilSirasi = (tur, langs) => TUR[tur].diller().map(([id]) => id).filter((id) => langs.includes(id));
 
   /** "0626051-DÜNYA-ULT M200 3B GARANTİ BELGESİ TR-EN.pdf", "0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf" */
@@ -1196,7 +1192,7 @@
       <h2>PDF İndir</h2>
       <p>CE uygunluk beyanı, vektörel PDF: yazılar seçilebilir ve aranabilir, yazı tipleri gömülüdür.</p>
       <div class="pdf-langs"><span>Diller</span><span id="pdfLangs" style="display:flex;gap:6px;flex:none">${langRow()}</span></div>
-      <span class="default-hint">İki dil seçilirse EN ve DE sayfası tek dosyada arka arkaya gelir.</span>
+      <span class="default-hint">Birden çok dil seçilirse sayfalar TR, EN, DE sırasıyla tek dosyada arka arkaya gelir.</span>
       ${imzasiz ? '<div class="imza-yok">Belgede imza yok: PDF imzasız olur.</div>' : ''}
       <div class="pdf-name" id="pdfName">${esc(name())}</div>
       <div class="modal-error" id="pdfError"></div>

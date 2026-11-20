@@ -277,8 +277,6 @@ const WxBelge = (() => {
             ${kv(t.seriNo, b.seriNo, { strong: true })}
             ${kv(t.sure, sure(c))}
             ${kv(t.teslimTarihi, tarih(b.teslimTarihi))}
-            ${kv(t.teslimYeri, b.teslimYeri)}
-            ${kv(t.fatura, tarih(b.faturaTarihi))}
             ${kv(t.alici, b.musteri)}
           </div>
         </section>

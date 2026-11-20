@@ -33,10 +33,14 @@ test('boş belge geçerli varsayılanlarla gelir, bilinmeyen değerler düzeltil
   assert.match(WxKayit.bosBelge().teslimTarihi, /^\d{4}-\d{2}-\d{2}$/);
 });
 
-test('eski kayıttaki belge no, fatura no, iç not ve belgeye özel garanti süresi atılır', () => {
-  const b = WxKayit.belgeNormalize({ seriNo: 'X', belgeNo: 'GB-2026-001', faturaNo: 'F-12', faturaTarihi: '2026-11-01', not: 'iç not', garantiYil: 3, garantiSaat: 4000 });
-  for (const alan of ['belgeNo', 'faturaNo', 'not', 'garantiYil', 'garantiSaat']) assert.ok(!(alan in b), `${alan} kalmamalı`);
-  assert.equal(b.faturaTarihi, '2026-11-01', 'fatura tarihi kalır: garanti bu tarihten başlar');
+test('eski kayıttaki belge no, fatura no ve tarihi, teslim yeri, iç not ve belgeye özel garanti süresi atılır', () => {
+  const b = WxKayit.belgeNormalize({ seriNo: 'X', belgeNo: 'GB-2026-001', faturaNo: 'F-12', faturaTarihi: '2026-11-01', teslimYeri: 'Ankara', teslimTarihi: '2026-11-02', not: 'iç not', garantiYil: 3, garantiSaat: 4000 });
+  for (const alan of ['belgeNo', 'faturaNo', 'faturaTarihi', 'teslimYeri', 'not', 'garantiYil', 'garantiSaat']) assert.ok(!(alan in b), `${alan} kalmamalı`);
+  assert.equal(b.teslimTarihi, '2026-11-02', 'teslim tarihi kalır');
+  for (const id of ['tr', 'en', 'de']) {
+    const t = WxMetin.dil(id).belge;
+    assert.ok(!('fatura' in t) && !('teslimYeri' in t), `${id}: garanti belgesinde fatura tarihi ve teslim yeri yazmaz`);
+  }
 });
 
 test('garanti süresi ve çalışma saati her belgede ayarlardan gelir; boş kapak ve satıcı da', () => {
@@ -99,9 +103,10 @@ test('JSON dosyası Türkçe harfleri korur ve geri okunur', () => {
 /* ─── CE belgesi ────────────────────────────────────────── */
 
 test('CE belgesi: ürün bilgileri taranmış belgedeki gibi gelir, silinen alan boş kalır', () => {
-  const b = WxKayit.ceNormalize({ seriNo: ' 0226089 ', dil: 'tr', imza: '../x', marka: '', urunAdi: { en: 'TURN TABLE PARTS WASHERS ™' } });
+  const b = WxKayit.ceNormalize({ seriNo: ' 0226089 ', dil: 'fr', imza: '../x', marka: '', urunAdi: { en: 'TURN TABLE PARTS WASHERS ™' } });
   assert.equal(b.seriNo, '0226089');
-  assert.equal(b.dil, 'en', 'CE belgesi EN ya da DE');
+  assert.equal(b.dil, 'en', 'CE belgesi TR, EN ya da DE; bilinmeyen dil EN olur');
+  assert.equal(WxKayit.ceNormalize({ dil: 'tr' }).dil, 'tr');
   assert.equal(b.model, 'LYM 1350 NS');
   assert.equal(b.urunAdi, undefined, 'ürün adı belgede tutulmaz (eski kayıttaki de alınmaz): CE metninde sabit');
   assert.equal(b.lvdRapor, '62024041.001');
@@ -133,6 +138,9 @@ test('CE PDF dosya adı eski CE dosyaları gibi: seri-müşteri-model CE CONFORM
   assert.equal(WxKayit.cePdfDosyaAdi(b, 'CE CONFORMITY', ['DEU']), '0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (DEU).pdf');
   assert.equal(WxKayit.cePdfDosyaAdi(b, 'CE CONFORMITY', ['EN', 'DEU']), '0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (EN-DEU).pdf');
   assert.equal(WxMetin.ceDil('de').dosyaEtiketi, 'DEU');
+  const etiketler = WxMetin.CE_DIL_SIRASI.map(([id]) => WxMetin.ceDil(id).dosyaEtiketi);
+  assert.deepEqual(etiketler, ['TR', 'EN', 'DEU'], 'CE dilleri TR, EN, DE sırasıyla');
+  assert.equal(WxKayit.cePdfDosyaAdi(b, 'CE CONFORMITY', etiketler), '0226089-KSYSTE-LYM 1350 NS CE CONFORMITY (TR-EN-DEU).pdf');
 });
 
 /** Sıralı deneme üreteci: Math.random yerine */
@@ -215,13 +223,22 @@ test('imza PNG boyutu ve çözünürlüğü okunur; PNG olmayan dosya alınmaz',
   assert.equal(WxKayit.pngBilgi(new Uint8Array(0)), null);
 });
 
-test('CE metni EN ve DE dilinde aynı yapıda; standart açıklamaları belgedeki satırlarıyla', () => {
+test('CE metni TR, EN ve DE dilinde aynı yapıda; standart açıklamaları belgedeki satırlarıyla', () => {
+  const tr = WxMetin.CE.tr;
   const en = WxMetin.CE.en;
   const de = WxMetin.CE.de;
   assert.deepEqual(keysOf(de, '').sort(), keysOf(en, '').sort());
+  assert.deepEqual(keysOf(tr, '').sort(), keysOf(en, '').sort());
   assert.equal(en.standartlar.length, 5);
-  assert.deepEqual(de.standartlar.map((s) => s.kod), en.standartlar.map((s) => s.kod));
-  assert.deepEqual(de.kriterler.map((k) => k[0]), en.kriterler.map((k) => k[0]));
+  for (const t of [tr, de]) {
+    assert.deepEqual(t.standartlar.map((s) => s.kod), en.standartlar.map((s) => s.kod));
+    assert.deepEqual(t.kriterler.map((k) => k[0]), en.kriterler.map((k) => k[0]));
+  }
+  // TR'nin taraması yok, EN belgesinin satır yerlerine oturur: her bölüm EN ile aynı satır sayısında
+  assert.deepEqual(tr.ust.map((p) => p.length), en.ust.map((p) => p.length));
+  assert.deepEqual(tr.standartlar.map((s) => s.metin.length), en.standartlar.map((s) => s.metin.length));
+  assert.equal(tr.beyan.length, en.beyan.length);
+  assert.equal(tr.urun, 'Endüstriyel Parça Yıkama Makinesi');
   // Taranmış belgelerdeki satır sayıları: EN 5-5-3-3-2, DE 6-4-4-3-3
   assert.deepEqual(en.standartlar.map((s) => s.metin.length), [5, 5, 3, 3, 2]);
   assert.deepEqual(de.standartlar.map((s) => s.metin.length), [6, 4, 4, 3, 3]);
@@ -230,7 +247,7 @@ test('CE metni EN ve DE dilinde aynı yapıda; standart açıklamaları belgedek
   // Ürün adı her makinede aynı: tüm makineler endüstriyel parça yıkama makinesi
   assert.equal(en.urun, 'Industrial Parts Washing Machine');
   assert.equal(de.urun, 'Industrie-Teilereinigungsmaschine');
-  for (const t of [en, de]) {
+  for (const t of [tr, en, de]) {
     for (const line of [...t.ust.flat(), ...t.beyan, ...t.standartlar.flatMap((s) => s.metin)]) {
       assert.ok(line && line === line.trim(), `satır boş ya da kenarında boşluk var: "${line}"`);
     }

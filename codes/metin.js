@@ -1,4 +1,4 @@
-/* Belge metinleri: garanti belgesi TR, EN, DE; CE uygunluk beyanı EN, DE (dosyanın sonunda).
+/* Belge metinleri: garanti belgesi TR, EN, DE; CE uygunluk beyanı TR, EN, DE (dosyanın sonunda).
    Garanti şartları sade Markdown'dır; sayfalara bölme belge.js'te kendiliğinden yapılır.
      # Başlık   ## Ara başlık   > Vurgulu kutu   * Madde   **kalın**   {{yer tutucu}}
    Yer tutucular ayarlardaki garanti süresi, çalışma saati, yedek parça ve kullanım ömrüyle dolar.
@@ -100,8 +100,6 @@ Müşteri, aşağıdaki durumlarda ürünün tamamen değiştirilmesi, iadesi ve
       seriNo: 'Seri No',
       sure: 'Garanti Süresi',
       teslimTarihi: 'Teslim Tarihi',
-      teslimYeri: 'Teslim Yeri',
-      fatura: 'Fatura Tarihi',
       alici: 'Alıcı',
       kase: 'Kaşe / İmza',
       tarih: 'Tarih'
@@ -206,8 +204,6 @@ The customer is entitled to a full replacement of the product, a refund or a pri
       seriNo: 'Serial No',
       sure: 'Warranty Period',
       teslimTarihi: 'Delivery Date',
-      teslimYeri: 'Place of Delivery',
-      fatura: 'Invoice Date',
       alici: 'Buyer',
       kase: 'Stamp / Signature',
       tarih: 'Date'
@@ -313,8 +309,6 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
       seriNo: 'Serien-Nr.',
       sure: 'Garantiezeit',
       teslimTarihi: 'Lieferdatum',
-      teslimYeri: 'Lieferort',
-      fatura: 'Rechnungsdatum',
       alici: 'Käufer',
       kase: 'Stempel / Unterschrift',
       tarih: 'Datum'
@@ -335,11 +329,101 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
 
   const dil = (id) => DILLER[id] || TR;
 
-  /* ─── CE uygunluk beyanı: EN, DE ──────────────────────────
-     Metin taranmış CE belgelerinden harfi harfine alındı; yazım da olduğu gibi kaldı.
+  /* ─── CE uygunluk beyanı: TR, EN, DE ──────────────────────
+     EN ve DE metni taranmış CE belgelerinden harfi harfine alındı; yazım da olduğu gibi kaldı.
+     TR metninin taraması yok: EN metninden çevrildi ve EN belgesinin satır düzenine oturur
+     (her bölüm EN ile aynı satır sayısında, satırlar EN'in en uzun satırını geçmez).
      Üst bilgi, standart açıklamaları ve beyan belgedeki satırlarıyla yazılır: dizinin her öğesi bir satır.
      Satırlar kendiliğinden bölünmez, belgenin yapısı yazı tipinden bağımsız aynı kalır. Bir cümle
      değişirse satır sonları da elle düzenlenir (sağ kenar: en uzun satır kadar). */
+
+  const CE_TR = {
+    kod: 'TR',
+    ad: 'Türkçe',
+    dosyaEtiketi: 'TR',
+    ust: [
+      ['Ürünlerin pazarlanmasına ilişkin akreditasyon ve piyasa', 'gözetimi gerekliliklerini belirleyen Avrupa Parlamentosu ve', 'Konseyinin 765/2008 sayılı (AT) Tüzüğü'],
+      ['EN ISO/IEC 17050-1:2010 | Uygunluk değerlendirmesi -', 'Tedarikçinin uygunluk beyanı']
+    ],
+    baslik: 'AT Uygunluk Beyanı',
+    imalatciEtiket: 'İMALATÇININ ADI',
+    firma: 'C.N.K ELEKTRONİK MAKİNE SANAYİ A.Ş.',
+    adres: '1. ORGANİZE SANAYİ BÖLGESİ ORHAN IŞIK BULVARI NO:1 ANKARA / TÜRKİYE',
+    web: 'https://www.dolfin.info.tr  - dolfin@dolfintr.com',
+    urunAdi: 'Ürün adı',
+    urun: 'Endüstriyel Parça Yıkama Makinesi',
+    tipModel: 'Tip / Model',
+    seriNo: 'Seri Numarası',
+    imalYili: 'İmal yılı',
+    marka: 'Marka',
+    raporlar: 'Test Raporları',
+    lvd: 'LVD-',
+    risk: 'RİSK DEĞERLENDİRME RAPORU',
+    kriterBaslik: 'Kriterler',
+    kriterler: [
+      ['2006/42/EC', 'Makine Direktifi'],
+      ['2014/35/EU', 'Alçak Gerilim Direktifi'],
+      ['2014/30/EU', 'Elektromanyetik Uyumluluk Direktifi']
+    ],
+    standartlar: [
+      {
+        kod: 'EN 60204-1:2018',
+        ad: 'Makinelerde güvenlik - Makinelerin elektrik donanımı',
+        metin: [
+          'EN 60204-1:2018, makinelerin elektrik donanımına ilişkin güvenlik gerekliliklerini belirler. Standart, makinelerde kullanılan elektrik, elektronik ve',
+          'programlanabilir elektronik donanımın tasarımı, kurulumu ve doğrulanmasına ilişkin temel ilkeleri kapsar. Amacı elektriksel tehlikeleri azaltmak,',
+          'personelin korunmasını ve makinelerin güvenli ve güvenilir şekilde çalışmasını sağlamaktır. EN 60204-1:2018; elektrik çarpmasına karşı koruma, kısa',
+          'devre koruması, aşırı akım koruması, topraklama, kumanda devreleri, acil durdurma işlevleri ve işaretlemeye ilişkin gereklilikleri ele alır ve endüstriyel',
+          'ortamlarda kullanılan makineler için yaygın olarak referans alınır.'
+        ]
+      },
+      {
+        kod: 'EN ISO 12100:2010',
+        ad: 'Makinelerde güvenlik - Tasarım için genel prensipler - Risk değerlendirmesi ve risk azaltma',
+        metin: [
+          'EN ISO 12100:2010, makine güvenliğine ilişkin genel ilkeleri, makine tasarımı sırasında uygulanacak risk değerlendirmesi ve risk azaltma yöntemleriyle',
+          'birlikte belirler. Standardın amacı; taşıma, kurulum, işletme, bakım ve hizmetten çıkarma dahil olmak üzere makinenin tüm yaşam döngüsü boyunca',
+          'makineyle ilgili tehlikelerin sistematik olarak belirlenmesini ve bunlardan kaynaklanan risklerin kabul edilebilir seviyelere indirilmesini sağlamaktır.',
+          'EN ISO 12100:2010; doğası gereği güvenli tasarım önlemleri, teknik koruyucu önlemler ve kullanım bilgilerinden oluşan üç aşamalı risk azaltma',
+          'hiyerarşisine dayanır ve makine güvenliği mevzuatında temel referans standartlarından biri olarak kabul edilir.'
+        ]
+      },
+      {
+        kod: 'EN ISO 13849-1:2023',
+        ad: 'Makinelerde güvenlik - Kontrol sistemlerinin güvenlikle ilgili parçaları',
+        metin: [
+          'EN ISO 13849-1:2023, makinelerde kontrol sistemlerinin güvenlikle ilgili parçalarının (SRP/CS) tasarımına ilişkin genel ilkeleri ve gereklilikleri belirler.',
+          'Standart; elektrik, elektronik, programlanabilir elektronik, hidrolik ve pnömatik kontrol sistemleriyle gerçekleştirilen güvenlik işlevlerine uygulanır.',
+          'Amacı, kontrol sistemlerinin güvenlikle ilgili parçalarının belirlenen risklere göre yeterli güvenilirlik seviyesine ulaşmasını sağlamaktır.'
+        ]
+      },
+      {
+        kod: 'EN IEC 61000-6-2:2019',
+        ad: 'Elektromanyetik uyumluluk (EMC) - Bölüm 6-2 - Endüstriyel ortamlar için bağışıklık standardı',
+        metin: [
+          'Bu standart, endüstriyel ortamlarda kullanılması amaçlanan elektrik ve elektronik donanım için geçerli elektromanyetik uyumluluk (EMC) bağışıklık',
+          'gerekliliklerini belirler. 0 Hz ile 400 GHz frekans aralığında tanımlanan bağışıklık gereklilikleri bu standardın kapsamındadır. Standartta gereklilik',
+          'belirtilmeyen frekanslar için deney yapılması gerekmez.'
+        ]
+      },
+      {
+        kod: 'EN IEC 61000-6-4:2019',
+        ad: 'Elektromanyetik uyumluluk (EMC) - Bölüm 6-4 - Endüstriyel ortamlar için emisyon standardı',
+        metin: [
+          'Bu gereklilikler, endüstriyel ortamlarda kullanılmak üzere tasarlanan elektrik ve elektronik donanım için geçerli elektromanyetik emisyon',
+          'gerekliliklerini kapsar.'
+        ]
+      }
+    ],
+    beyan: [
+      'Bu beyan ile, tanımlanan ürünlerin yürürlükteki ilgili mevzuat,',
+      'standart ve direktiflerde belirtilen kriterlere, temel gerekliliklere ve',
+      'uygulanabilir hükümlere tam olarak uygun olduğunu beyan ederim.'
+    ],
+    imzalayan: [['Fatih GÜRAL', true, true], [' – C.N.K ELEKTRONİK MAKİNE SANAYİ AŞ Kalite Kontrol Şefi | İmza:', false, false]],
+    tarihEtiket: 'Düzenleme Tarihi:',
+    alt: 'Doküman Revizyon Numarası / Tarihi: 01 / 15.12.2025 | Doküman Kodu: CNK52022161002'
+  };
 
   const CE_EN = {
     kod: 'EN',
@@ -523,8 +607,8 @@ Der Kunde hat Anspruch auf einen vollständigen Austausch des Produkts, eine Rü
     alt: 'Dokument-Überarbeitungsnummer / Datum: 01 / 15.12.2025 | Dokumentencode: CNK52022161002'
   };
 
-  const CE = { en: CE_EN, de: CE_DE };
-  const CE_DIL_SIRASI = [['en', 'EN', 'English'], ['de', 'DE', 'Deutsch']];
+  const CE = { tr: CE_TR, en: CE_EN, de: CE_DE };
+  const CE_DIL_SIRASI = [['tr', 'TR', 'Türkçe'], ['en', 'EN', 'English'], ['de', 'DE', 'Deutsch']];
   /** PDF dosya adındaki belge adı (eski dosyalardaki "CE COMFORMITY", yazımı düzeltildi) */
   const CE_DOSYA_ADI = 'CE CONFORMITY';
   const ceDil = (id) => CE[id] || CE_EN;
